@@ -1,0 +1,30 @@
+{
+  "name": "printpress-pos",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "dev:webpack": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed": "node scripts/seed.mjs",
+    "reset-password": "node scripts/reset-password.mjs",
+    "rebuild-ledger": "node scripts/rebuild-ledger.mjs",
+    "test": "node tests/checks.mjs",
+    "test:db": "node tests/integration.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.4",
+    "mongoose": "^9.8.0",
+    "next": "^15.5.21",
+    "nodemailer": "^9.0.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
