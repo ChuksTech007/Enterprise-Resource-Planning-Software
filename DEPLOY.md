@@ -81,6 +81,32 @@ and match it:
 
 Frankfurt is usually the best of these for Nigeria.
 
+### Why the config file has no comments in it
+
+`vercel.json` holds only `regions` and `crons`. JSON has no comment syntax,
+and the usual workaround — a `"//regions"` key alongside the real one — is
+rejected by Vercel outright:
+
+    Invalid request: should NOT have additional property `//regions`
+
+So the reasoning lives here instead. Do not add explanatory keys to that file;
+the import will fail before the project is even created.
+
+---
+
+## The nightly summary
+
+`vercel.json` runs `/api/summary/daily` at **19:00 UTC — 8:00pm in Lagos**,
+about closing time.
+
+It needs `CRON_SECRET` set, or the endpoint refuses to run at all. Vercel
+cannot put a query string on a cron, so the secret travels in the
+`Authorization` header Vercel sends automatically, and the route checks it.
+That is what stops a stranger hitting the URL and reading the shop's takings.
+
+Without `SMTP_*` it still runs and simply has nowhere to send. The summary
+remains visible in the app, and the WhatsApp button is unaffected.
+
 ---
 
 ## 4. First sign-in

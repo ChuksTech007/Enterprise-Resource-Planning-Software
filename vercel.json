@@ -1,35 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-
-  "//regions": [
-    "Run the functions in the SAME region as your MongoDB Atlas cluster.",
-    "Every page does several database round trips; putting the app in the US",
-    "and the database in Europe adds an Atlantic crossing to each one, and the",
-    "app will feel sluggish for no visible reason.",
-    "",
-    "Check your cluster's region in Atlas (Database -> your cluster, under the",
-    "name), then set the matching Vercel region below:",
-    "  Atlas AWS eu-west-1  (Ireland)      -> dub1",
-    "  Atlas AWS eu-central-1 (Frankfurt)  -> fra1",
-    "  Atlas AWS us-east-1  (N. Virginia)  -> iad1",
-    "  Atlas AWS eu-west-2  (London)       -> lhr1",
-    "",
-    "Frankfurt is usually the best of these for Nigeria."
-  ],
   "regions": ["fra1"],
-
-  "//crons": [
-    "The daily takings summary, emailed to the owner at closing time.",
-    "Times are UTC: 19:00 UTC = 8:00pm in Lagos.",
-    "",
-    "Two things this needs before it will work:",
-    "  1. CRON_SECRET set in the Vercel environment variables",
-    "  2. SMTP_* configured, and the owner's email set under Settings",
-    "     (without SMTP it still runs, it simply has nowhere to send)",
-    "",
-    "Vercel does not let a cron carry a query string, so the secret is read",
-    "from the Authorization header Vercel sends automatically."
-  ],
   "crons": [
     {
       "path": "/api/summary/daily",
