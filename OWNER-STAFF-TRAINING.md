@@ -1,204 +1,336 @@
-# Master's Technology — using the system
+# Master's Technology — how to use it
 
-For the day you sit down with the owner and the staff, and for them to keep
-afterwards.
+This replaces the invoice pad.
 
-The shop does three things to a customer's picture — **prints** it, mounts it
-on **canvas**, and puts it in a **frame** — and often more than one of those
-at once. The system is built around that, which is why the counter screen
-looks like the invoice pad it replaces.
+Everything you used to write on paper — the size, what the customer wanted,
+what it cost — you type in once, and the system does the adding up, remembers
+the customer, tells the workshop what to make, and keeps the books.
+
+You need internet. It works on a computer or a phone; it is the same system
+either way.
+
+There are two parts here. **Part 1 is for the owner** and is done once, before
+anybody trades. **Part 2 is for whoever stands at the counter**, and is what
+they do every day.
 
 ---
 
-## Part 1 — The owner, before anyone trades
+# Part 1 — Owner: setting up
 
-Work through this in order. Nothing can be quoted until step 4 is done.
+Do these in order. About an hour, and most of it is step 4.
 
-### Sign in
+## Step 1 — Sign in, and change your password
 
-- [ ] Open the shop's web address on any computer or phone with internet.
-- [ ] Sign in with the owner username and password.
-- [ ] **Go to `Staff` and change that password now.** The one you were given is
-      written down in the project files, so treat it as public.
+Open the shop's web address. You will see a sign-in box.
 
-### Business details
+Type the username and password you were given and press **Sign in**.
 
-- [ ] `Settings` — name, address, phone.
-- [ ] Owner's WhatsApp number, in full international form: `2348012345678`.
-      This is where the daily takings summary goes.
-- [ ] Leave the currency as `₦` and the timezone as Lagos.
+**Now change that password.** Click **Staff** on the left, click your own
+name, and set a new one. The password you were given is written down in the
+project files — treat it as though everybody knows it, because they can.
 
-### Staff accounts
+## Step 2 — Tell it about the shop
 
-- [ ] `Staff` → add one account per person. Never a shared login.
-- [ ] Give them the **cashier** role, not owner.
-- [ ] A cashier cannot see cost prices, profit, expenses or the money screens.
-      That is the point of the two roles, and it only holds if each person
-      has their own account.
-- [ ] When somebody leaves: `Staff` → **Disable**. Do not delete them — their
-      name stays on the jobs they recorded.
+Click **Settings**.
 
-### The price list — the important one
+Fill in the shop name, address and phone. These print on receipts, so write
+them as you want a customer to read them.
 
-`Price list` is a grid: **sizes down the side, what you sell across the top.**
+There is also a box for your **WhatsApp number**. Write it in full, starting
+234, no plus sign, no spaces:
+
+    2348012345678
+
+That is where the end-of-day summary goes.
+
+Press **Save**.
+
+## Step 3 — An account for each person
+
+Click **Staff**, then **Add staff**.
+
+Give every person their own account and their own password. Do not let two
+people share one.
+
+Choose **Cashier**, not Owner. A cashier can serve customers, take money and
+record jobs, but cannot see:
+
+- what things cost you to buy
+- your profit
+- the expenses
+- the money screens
+
+That separation is the main reason to have accounts at all, and it only works
+if each person has their own. Two people on one login and you can never tell
+who did what.
+
+When somebody leaves, open **Staff**, find them, press **Disable**. Do not
+delete them — their name has to stay on the jobs they recorded.
+
+## Step 4 — Put your prices in
+
+This is the important one. **Nothing can be quoted until it is done.**
+
+Click **Price list**. You will see a table: your **sizes down the left**, what
+you sell **across the top**.
 
 |  | Print | Canvas | Frame bold | Frame normal | Frame tiny | Acrylic | Board |
 |---|---|---|---|---|---|---|---|
-| 8/10 | | | | | | | |
-| 12/15 | | | | | | | |
+| 8/10 | 500 | 400 | | 1,800 | | 900 | |
+| 12/15 | 1,500 | 1,200 | 7,500 | 5,400 | 3,600 | | |
 
-- [ ] Add every size the shop sells, written the way staff write it: `12/15`.
-- [ ] Type the price into each box.
-- [ ] **Leave a box empty if you do not sell that thing at that size.** An
-      empty box is not a price of zero — zero would mean you do it for free.
-- [ ] Press **Save**. Only the boxes you changed are saved.
-- [ ] Switch to **Editing cost** to enter what each thing costs you to buy.
-      Only you see those, and they are what the profit figures come from.
+**To add a size.** At the bottom is a box saying *Add a size*. Type it the way
+you and your staff say it — `12/15`, `16/20` — and press **Add size**. An
+empty row appears.
 
-Take your time here. A half-filled price list is worse than an empty one:
-staff trust the numbers that are there and guess the gaps.
+**To put a price in.** Click a box and type the number. No naira sign, no
+commas — just `4500`.
 
-### Stock
+**To leave something out.** If you do not sell that thing at that size, leave
+the box empty. An empty box means *we don't do that*. It is **not** the same
+as typing `0`, which means *we do it for free*.
 
-- [ ] `Stock` → add mouldings, glass, board, backing, fittings.
-- [ ] Set a **reorder level** on each: the number at which you want warning.
-- [ ] The Stock screen goes red on any item at or below that level.
+**To save.** Boxes you change turn blue, and the button at the top counts them
+— *Save 6 changes*. Press it when you are done. Only what you touched is
+saved.
 
-### Suppliers
+**Your buying prices.** Press the button reading **Editing selling price** and
+it becomes **Editing cost**. The same table now takes what each thing costs
+*you*. Fill these in if you want the profit figures to mean anything. No
+member of staff can ever see them.
 
-- [ ] `Suppliers` → who you buy from, their phone, and how many days they
-      usually take to deliver.
-- [ ] That screen then shows you **which supplier to ring today** and what to
-      order from them.
+> Do not rush this step. A half-filled price list is worse than an empty one,
+> because staff trust the prices that are there and guess the rest.
 
-### Open the till, once
+## Step 5 — Put your stock in
 
-- [ ] `Cash-up` → **Open the till** with the cash currently in the drawer.
-- [ ] **It stays open.** Through closing the app, through restarts, for weeks.
-      You do not open it every morning.
-- [ ] You only close it when you actually want to count the drawer and start
-      again — and closing is what checks the cash against the books.
+Click **Stock**, then **Add item**.
+
+Add your mouldings, glass, mount board, backing and fittings — whatever sits
+on the shelves.
+
+For each, set a **reorder level**: the number you want warning at. If you keep
+24 lengths of a moulding and get uncomfortable below 6, put 6.
+
+That row then turns red when it reaches 6, and the dashboard tells you how
+many items are low.
+
+## Step 6 — Put your suppliers in
+
+Click **Suppliers**, then **Add supplier**. Their name, phone, and roughly how
+many days they take to deliver.
+
+Once that is in, the Suppliers screen tells you **which supplier to ring
+today** and exactly what to order from each, based on what has run low.
+
+## Step 7 — Open the till
+
+Click **Cash-up**, then **Open the till**.
+
+Count the cash in the drawer right now, type that amount, press **Open till**.
+
+**You do this once.** The till stays open — through closing the browser,
+through restarts, for weeks. You do not open it every morning.
+
+You close it only when you actually want to count the drawer and start again.
+Closing is what checks the cash against the books.
 
 ---
 
-## Part 2 — The counter, every day
+# Part 2 — At the counter, every day
 
-### Quoting a customer
+Learn this part and you can run the shop.
 
-`Quote a frame` — this is the pad, on screen.
+## A customer walks in
 
-1. Pick the **size**.
-2. Type a price under each column that applies — **Print**, **Canvas**,
-   **Frame**, **Acrylic**, **Board** — and leave the rest blank.
-3. The price list fills the boxes in for you. **Type over any of them** if
-   this job is different. That does not change the shop's prices.
-4. If there is a frame, choose **bold / normal / tiny** under the size.
-5. **+ Add row** for each further picture the customer brought.
-6. The total adds itself.
+Mrs Adeyemi brings a photograph. She wants it printed, and she wants it
+framed.
 
-Then one of two buttons:
+### 1. Open the counter screen
 
-- **Save as quote** — they are thinking about it. Nothing is owed.
-- **They said yes** — it becomes a job for the workshop.
+Click **Quote a frame**.
 
-Most people ask a price and walk away. A quote costs the shop nothing.
+You will see a table with these headings:
 
-### You do not need every detail
+    Size | Qty | Print | Canvas | Frame | Acrylic | Board | Total
 
-**Nothing on that screen is required.** No name, no size, no price, no date.
+It is the invoice pad, on a screen. **One row is one picture.**
 
-Somebody hands over a picture and pays cash — write the size and the price,
-give them a ticket, move on. Somebody wants a price for a size you have to go
-and measure — save it with just the size and fill the price in later.
+### 2. Say who it is for
+
+At the top is a box for the customer. Start typing her name or phone number.
+
+- Been in before? She appears in a list — click her.
+- New? Just type her name and phone. She is saved automatically.
+- A walk-in paying cash, no point taking a name? **Leave it blank.** That is
+  allowed.
+
+### 3. Pick the size
+
+In the first column, choose **12/15**.
+
+Prices appear along the row straight away, taken from your price list. Boxes
+with no price set stay empty.
+
+### 4. Say what she is having
+
+She wants a **print** and a **frame** — no canvas, no acrylic.
+
+There will be a number under **Print** and one under **Frame**. Leave those.
+**Clear anything she is not having**, so the box is empty.
+
+A small box appears under the size asking the frame grade — **bold**,
+**normal** or **tiny**. Choose hers.
+
+### 5. Changing a price
+
+Every price box can be typed over.
+
+Agreed ₦4,000 for the frame instead of ₦5,400? Click that box, clear it, type
+`4000`.
+
+**This does not change your price list.** It is only this job.
+
+### 6. More than one picture
+
+Three pictures? Press **+ Add row** and do the same again for each. Every row
+is priced on its own and the total at the bottom adds them together.
+
+### 7. Two ways to finish
+
+**Save as quote** — she wants to think about it. Nothing is owed, nothing is
+promised, the workshop is not told to start. Most people who ask a price walk
+away, and that is normal.
+
+**They said yes** — she is going ahead. It becomes a job the workshop can see.
+
+If you have promised her a day, fill in **Ready by** first.
+
+---
+
+## What if you do not know everything?
+
+**Nothing on that screen is required.**
+
+Not a name. Not a size. Not even a price.
+
+- She pays cash and goes — put the size and the price, save, hand her the
+  ticket.
+- She wants a price for something you have to measure properly — save it with
+  just the size and put the price in later.
+- She has not decided on the frame — save what you know.
 
 The only thing refused is a completely blank invoice.
 
-### Taking money
-
-- Cash needs the till open. Transfer, POS and credit do not.
-- **Who owes me** lists everyone with money outstanding, oldest first, with a
-  **Remind** button and a **Collect** button on each row.
-
-### Jobs through the workshop
-
-`Jobs & quotes` shows every job with its **size**, what it is, its status and
-what is still owing. Overdue jobs are tinted red.
-
-Move a job along as the work happens, and mark it **ready** when the customer
-can collect.
-
-### If the connection drops for a moment
-
-The system runs online, so it needs internet.
-
-If the signal goes while somebody is part-way through a sale, that sale is
-held on the device and sent when the connection comes back — a bar across
-the top says how many are waiting. It is a safety net for a bad minute, not
-a way of working: leave the browser open until the bar clears.
+**Record something rather than nothing.** A size on its own in the system is
+worth more than a full note on paper that goes missing.
 
 ---
 
-## Part 3 — What the owner watches
+## Taking money
 
-### Every day
+**Cash** needs the till open. If it is not, the screen says so and the owner
+opens it — once, and it stays open.
 
-- **Dashboard** — taken today, owed to you, jobs today, and **Money left**:
-  everything in, less everything out.
-- **Cash-up → All money** — the same figure over any period, with where it
-  came in and where it went.
+**Transfer, POS and credit** do not need the till at all.
 
-**"Money left" is not profit.** It is money that actually moved. Work sold but
-not yet paid for is not in it, and money you owe a supplier is only counted
-once you have paid it. Reading it as profit is how a shop spends money it has
-already promised to somebody else.
+### Somebody paying later
 
-### Counting the drawer
+Click **Who owes me**. Every unpaid invoice, oldest debt first, with two
+buttons on each row:
 
-`Cash-up` shows **Should be in drawer now** — only you see it.
+- **Remind** — send them a reminder
+- **Collect** — take the money now
 
-When you close the till, the cashier types what they counted **before** the
-system says what it expected. That order is deliberate: shown the expected
-figure first, anybody would write that number down, and a shortfall would
-never appear. A drawer that is short has to be explained before it will close.
+The **Age** column shows how long they have owed it. Over a month turns red.
 
-### Every week or so
+---
 
-- **Reports** — any period, exportable to Excel.
-- **Accounts** — profit and loss, balance sheet, trial balance and the
-  journal. Note that "debits equal credits" only proves the arithmetic: every
-  entry is refused unless its two sides match, so the books balance even if a
-  whole sale was never posted. **Rebuild ledger** re-posts everything from the
-  sales, payments and expenses themselves, which is what puts that right.
+## Jobs going through the workshop
+
+Click **Jobs & quotes**.
+
+Every job is a row: job number, customer, **the size**, what it is, how far
+along, when it is due, and what is still owed.
+
+**A late job turns the whole row red.**
+
+Open a job to move it along as the work happens, and mark it **ready** when
+the customer can come for it.
+
+---
+
+# Part 3 — Owner: what to look at
+
+## Every day, one glance
+
+Open the **Dashboard**:
+
+- **Taken today** — money in today
+- **Owed to you** — what customers still owe
+- **Jobs today** — work taken in
+- **Money left** — everything that has ever come in, less everything gone out
+
+### About "Money left"
+
+**It is not profit.**
+
+It is money that actually moved. Work you have done but not been paid for is
+not in it. Money you owe a supplier is not taken off until you have paid them.
+
+Reading it as profit is how a shop spends money it has already promised
+somebody else.
+
+For the detail, open **Cash-up**: the card at the top shows money **in**,
+money **out** and what is **left**, over whatever period you pick.
+
+## Counting the drawer
+
+Open **Cash-up**. At the top is **Should be in drawer now**. Only you can see
+that.
+
+When the till is closed, whoever counts types **what they counted first** —
+before the system shows what it expected. That order is deliberate. With the
+expected figure on screen first, anybody would simply copy it down, and a
+drawer that was short would never show up.
+
+If the count does not match, the difference must be explained in writing
+before the till will close.
+
+## Once a week or so
+
+- **Reports** — any period, exports to Excel.
 - **Stock movements** — every change to stock, who made it and why. A column
   of red here is stock leaving that nobody expected.
+- **Accounts** — the formal books. One warning: "debits equal credits" only
+  proves the sums were done right. Every entry is refused unless its two sides
+  match, so the books balance even if a whole sale was never written down.
+  **Rebuild ledger** re-does them from the actual sales, payments and
+  expenses, which is what puts that right.
 
 ---
 
-## Owner or cashier?
+# Questions people ask
 
-| | Owner | Cashier |
-|---|---|---|
-| Quote, sell, take payment | ✓ | ✓ |
-| Jobs, customers, stock | ✓ | ✓ |
-| Cost prices and profit | ✓ | — |
-| Expenses, money screens | ✓ | — |
-| Price list, staff, settings | ✓ | — |
-| Reports and accounts | ✓ | — |
+**Can two people use it at once?**
+Yes. Different computers, different phones, same time.
 
----
+**Do I open the till every morning?**
+No. Once. It stays open until you deliberately close it to count.
 
-## Things worth saying out loud
+**What if I type a price wrong?**
+On a quote, change it before saving. On a saved invoice, the owner can cancel
+it — nothing is ever really deleted, and the log records who did it.
 
-- **Change the owner password today.**
-- **Everyone gets their own login.** A shared account makes the audit log
-  useless and the two roles pointless.
-- **The till opens once**, not every morning.
-- **An empty price box means "not sold", not "free".**
-- **Record it even if you do not know everything.** A size alone is worth
-  more than a note on paper that gets lost.
-- **Nothing is ever deleted**, only cancelled or voided — and the log keeps
-  who did it.
-- Atlas does not back itself up. Take a copy regularly:
-  ```bash
-  mongodump --uri="YOUR_MONGODB_URI" --out=./backups/$(date +%F)
-  ```
+**Can a cashier see my profit?**
+No. Not cost prices, not profit, not expenses, not the money screens.
+
+**What if the internet drops?**
+The system needs internet. If it goes part-way through a sale, that sale is
+held on the device and sent when it returns — a bar at the top says how many
+are waiting. Leave the browser open until it clears.
+
+**How do I protect the records?**
+Take a copy regularly. The system does not do it by itself:
+
+    mongodump --uri="YOUR_MONGODB_URI" --out=./backups/2026-08-25

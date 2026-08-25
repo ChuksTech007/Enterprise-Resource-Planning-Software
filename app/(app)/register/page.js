@@ -134,12 +134,18 @@ function OpenTillForm({ onOpened }) {
 
   return (
     <Card className="p-5">
-      <SectionTitle>Open your till</SectionTitle>
+      <SectionTitle>Open the till</SectionTitle>
       <p className="mb-4 text-sm text-muted">
-        Count the cash you are starting with and enter it. You cannot take cash payments until the till is open — that
-        is what makes the end-of-day count mean something.
+        Count the cash in the drawer now and enter it. Cash payments cannot be taken until the till is
+        open — that is what gives the count something to be measured against.
       </p>
       {error ? <ErrorNote>{error}</ErrorNote> : null}
+      <p className="mb-4 rounded-lg bg-surface px-3 py-2 text-sm text-muted">
+        <span className="font-semibold text-ink">You only do this once.</span> The till stays open
+        afterwards — through closing the browser, through restarts, for as long as you like. Close it
+        only when you actually want to count the drawer and start again.
+      </p>
+
       <Field label="Opening cash (float)" className="mt-3">
         <MoneyInput value={float} onChange={setFloat} />
       </Field>
