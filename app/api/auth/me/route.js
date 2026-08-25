@@ -16,7 +16,7 @@ export const GET = route(async ({ user }) => {
     user: { id: user._id, name: user.name, role: user.role, username: user.username },
     settings: settings
       ? { ...settings, _id: String(settings._id) }
-      : { businessName: 'My Printing Press', currency: '₦' },
+      : { businessName: "Master's Technology", currency: '₦' },
     openRegister: openRegister ? { ...openRegister, _id: String(openRegister._id) } : null,
   };
 });

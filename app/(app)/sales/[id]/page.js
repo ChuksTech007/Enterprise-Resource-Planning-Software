@@ -122,7 +122,7 @@ export default function SaleDetailPage() {
       <Card className="p-5 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
           <div>
-            <h1 className="text-lg font-bold">{settings?.businessName || 'My Printing Press'}</h1>
+            <h1 className="text-lg font-bold">{settings?.businessName || "Master's Technology"}</h1>
             {settings?.address ? <p className="text-sm text-muted">{settings.address}</p> : null}
             {settings?.phone ? <p className="text-sm text-muted">{settings.phone}</p> : null}
           </div>

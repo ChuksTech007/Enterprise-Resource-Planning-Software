@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ *
- * PrintPress service worker.
+ * Master's Technology service worker.
  *
  * Its only job is READS: keep the app openable and keep the last known
  * data visible when the network is gone.

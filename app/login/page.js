@@ -45,7 +45,7 @@ function LoginForm() {
             🖨
           </div>
           <h1 className="text-xl font-bold">Sign in</h1>
-          <p className="mt-1 text-sm text-muted">Sales, stock and jobs for your press</p>
+          <p className="mt-1 text-sm text-muted">Framing, printing and canvas — quotes, jobs and the books</p>
         </div>
 
         <form onSubmit={submit} className="card space-y-4 p-5">

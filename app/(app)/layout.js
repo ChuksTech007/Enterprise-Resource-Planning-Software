@@ -22,7 +22,7 @@ export default async function AppLayout({ children }) {
       initialSettings={
         settings
           ? { ...settings, _id: String(settings._id), updatedBy: undefined }
-          : { businessName: 'My Printing Press', currency: '₦' }
+          : { businessName: "Master's Technology", currency: '₦' }
       }
     >
       <Shell>{children}</Shell>

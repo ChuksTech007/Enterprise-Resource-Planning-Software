@@ -2,10 +2,10 @@ import './globals.css';
 import ServiceWorker from '@/components/ServiceWorker';
 
 export const metadata = {
-  title: 'PrintPress — sales, stock & jobs',
-  description: 'Point of sale, inventory and job tracking for a printing press.',
+  title: "Master's Technology",
+  description: 'Quotes, jobs, stock and accounts for a framing and printing shop.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'PrintPress' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: "Master's Technology" },
 };
 
 export const viewport = {

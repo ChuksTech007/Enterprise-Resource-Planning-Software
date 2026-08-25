@@ -73,7 +73,7 @@ if (owner) {
 
 const settings = await Settings.findOne({ key: 'main' });
 if (!settings) {
-  await Settings.create({ key: 'main', businessName: 'My Printing Press', currency: '₦' });
+  await Settings.create({ key: 'main', businessName: "Master's Technology", currency: '₦' });
   console.log('✓ Created default business settings');
 } else {
   console.log('✓ Settings already exist');

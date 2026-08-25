@@ -1,7 +1,7 @@
 {
-  "name": "PrintPress — sales, stock & jobs",
-  "short_name": "PrintPress",
-  "description": "Point of sale, inventory and job tracking for a printing press.",
+  "name": "Master's Technology",
+  "short_name": "Master's Tech",
+  "description": "Quotes, jobs, stock and accounts for a framing and printing shop.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

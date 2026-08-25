@@ -15,7 +15,7 @@ async function makeSummary(query) {
   const report = await buildReport(range);
 
   const text = dailySummaryText(report, {
-    businessName: settings.businessName || 'My Printing Press',
+    businessName: settings.businessName || "Master's Technology",
     currency: settings.currency || '₦',
     label: range.label,
   });

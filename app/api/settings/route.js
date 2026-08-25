@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export const GET = route(async () => {
   const settings = await Settings.findOne({ key: 'main' }).lean();
-  return { settings: settings || { key: 'main', businessName: 'My Printing Press', currency: '₦' } };
+  return { settings: settings || { key: 'main', businessName: "Master's Technology", currency: '₦' } };
 });
 
 export const PUT = route(
