@@ -13,7 +13,8 @@
     "rebuild-ledger": "node scripts/rebuild-ledger.mjs",
     "test": "node tests/references.mjs && node tests/checks.mjs",
     "test:db": "node tests/integration.mjs",
-    "test:refs": "node tests/references.mjs"
+    "test:refs": "node tests/references.mjs",
+    "wipe": "node scripts/wipe.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
