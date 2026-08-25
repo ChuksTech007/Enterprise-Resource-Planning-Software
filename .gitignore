@@ -6,3 +6,19 @@ out
 *.log
 .DS_Store
 backups/
+
+# Scratch files from local testing.
+.server.log
+.cj
+.acc_*.json
+
+# The framing rebuild, its own repository with its own remote
+# (github.com/ChuksTech007/ERP). Nesting it inside this one is what let a
+# branch switch here wipe its working tree — ignored so the two stop
+# interfering. Move it out of this folder when convenient.
+Latest/
+New/
+
+# Permission list this machine accumulates while working: local, and full of
+# one-off commands with absolute paths.
+.claude/settings.json

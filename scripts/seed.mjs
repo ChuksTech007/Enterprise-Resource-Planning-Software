@@ -81,17 +81,32 @@ if (!settings) {
 
 /* ---------------------------- price list --------------------------- */
 
-const PRICES = [
-  { name: '100 complimentary cards', jobType: 'Business cards', unitLabel: 'per 100', price: 8000, estimatedCost: 3200, minQuantity: 1 },
-  { name: '1000 complimentary cards', jobType: 'Business cards', unitLabel: 'per 1000', price: 45000, estimatedCost: 21000, minQuantity: 1 },
-  { name: 'A5 flyers (per 100)', jobType: 'Flyers', unitLabel: 'per 100', price: 12000, estimatedCost: 5500, minQuantity: 1 },
-  { name: 'Banner 3x2ft', jobType: 'Banner', unitLabel: 'per piece', price: 9000, estimatedCost: 4000, minQuantity: 1 },
-  { name: 'Banner (per sqm)', jobType: 'Large format', unitLabel: 'per sqm', price: 4500, estimatedCost: 2000, minQuantity: 1 },
-  { name: 'Stickers A4 sheet', jobType: 'Stickers', unitLabel: 'per sheet', price: 1500, estimatedCost: 600, minQuantity: 5 },
-  { name: 'Booklet binding', jobType: 'Booklet', unitLabel: 'per copy', price: 2500, estimatedCost: 1100, minQuantity: 1 },
-  { name: 'A4 lamination', jobType: 'Finishing only', unitLabel: 'per sheet', price: 500, estimatedCost: 150, minQuantity: 1 },
-  { name: 'Photocopy A4 (per page)', jobType: 'Other', unitLabel: 'per page', price: 50, estimatedCost: 15, minQuantity: 10 },
-];
+/* A starter rate card, in the shape the shop's paper invoice already uses:
+ * a size, and what each thing costs at that size.
+ *
+ * THE FIGURES ARE PLACEHOLDERS. They were taken from an example invoice and
+ * are not the shop's real prices — the owner edits every one of them before
+ * trading. They exist so the screens have something to show on the first day,
+ * and so the shape of the card is obvious.
+ *
+ * Sizes are written the way the counter writes them, in inches: "12/15".
+ */
+const SIZES = ['8/10', '10/12', '12/15', '16/20', '20/24', '24/36'];
+
+const PRICES = SIZES.flatMap((size, i) => {
+  /* Bigger costs more. A crude ramp purely so the placeholder card is not
+   * flat — the owner replaces these. */
+  const step = i + 1;
+  return [
+    { name: `Print ${size}`, product: 'print', size, unitLabel: 'per piece', price: 500 * step, estimatedCost: 200 * step },
+    { name: `Canvas ${size}`, product: 'canvas', size, unitLabel: 'per piece', price: 400 * step, estimatedCost: 150 * step },
+    { name: `Frame ${size} bold`, product: 'frame', size, grade: 'bold', unitLabel: 'per piece', price: 2500 * step, estimatedCost: 1200 * step },
+    { name: `Frame ${size} normal`, product: 'frame', size, grade: 'normal', unitLabel: 'per piece', price: 1800 * step, estimatedCost: 900 * step },
+    { name: `Frame ${size} tiny`, product: 'frame', size, grade: 'tiny', unitLabel: 'per piece', price: 1200 * step, estimatedCost: 600 * step },
+    { name: `Acrylic glass ${size}`, product: 'glass', size, unitLabel: 'per piece', price: 900 * step, estimatedCost: 450 * step },
+    { name: `Frameless board ${size}`, product: 'board', size, unitLabel: 'per piece', price: 1500 * step, estimatedCost: 700 * step },
+  ];
+});
 
 const priceCount = await PriceItem.countDocuments();
 if (priceCount === 0) {
@@ -113,18 +128,23 @@ if (materialCount === 0) {
   });
 
   const MATERIALS = [
-    { name: 'Art paper 300gsm', category: 'Paper', size: 'SRA3', gsm: 300, finish: 'Matte', colour: 'White', unit: 'sheets', quantity: 500, reorderLevel: 100, unitCost: 120, shelfLocation: 'A1' },
-    { name: 'Art paper 150gsm', category: 'Paper', size: 'A3', gsm: 150, finish: 'Gloss', colour: 'White', unit: 'sheets', quantity: 800, reorderLevel: 200, unitCost: 70, shelfLocation: 'A2' },
-    { name: 'Bond paper 80gsm', category: 'Paper', size: 'A4', gsm: 80, colour: 'White', unit: 'reams', quantity: 12, reorderLevel: 4, unitCost: 7500, shelfLocation: 'B1' },
-    { name: 'Flex banner material', category: 'Substrate', size: '1370mm roll', unit: 'metres', quantity: 60, reorderLevel: 15, unitCost: 1800, shelfLocation: 'Store' },
-    { name: 'Vinyl sticker roll', category: 'Substrate', size: '1070mm roll', unit: 'metres', quantity: 40, reorderLevel: 10, unitCost: 2200, shelfLocation: 'Store' },
-    { name: 'Gloss lamination film', category: 'Lamination film', size: '330mm', unit: 'rolls', quantity: 6, reorderLevel: 2, unitCost: 9500, shelfLocation: 'C1' },
-    { name: 'Toner — Black', category: 'Toner', colour: 'Black', unit: 'pieces', quantity: 3, reorderLevel: 1, unitCost: 42000, shelfLocation: 'C2' },
-    { name: 'Toner — Cyan', category: 'Toner', colour: 'Cyan', unit: 'pieces', quantity: 2, reorderLevel: 1, unitCost: 45000, shelfLocation: 'C2' },
-    { name: 'Toner — Magenta', category: 'Toner', colour: 'Magenta', unit: 'pieces', quantity: 2, reorderLevel: 1, unitCost: 45000, shelfLocation: 'C2' },
-    { name: 'Toner — Yellow', category: 'Toner', colour: 'Yellow', unit: 'pieces', quantity: 1, reorderLevel: 1, unitCost: 45000, shelfLocation: 'C2' },
-    { name: 'Binding coils 12mm', category: 'Binding', unit: 'packs', quantity: 5, reorderLevel: 2, unitCost: 6000, shelfLocation: 'D1' },
-    { name: 'Cutting blades', category: 'Blades', unit: 'pieces', quantity: 8, reorderLevel: 3, unitCost: 2500, shelfLocation: 'D2' },
+    // Moulding is bought in lengths and consumed by the millimetre.
+    { name: 'Oak 40mm', category: 'Moulding', size: '3m length', colour: 'Natural', unit: 'lengths', quantity: 18, reorderLevel: 6, unitCost: 4800, shelfLocation: 'Rack A' },
+    { name: 'Black gloss 25mm', category: 'Moulding', size: '3m length', colour: 'Black', unit: 'lengths', quantity: 24, reorderLevel: 8, unitCost: 3000, shelfLocation: 'Rack A' },
+    { name: 'Gold ornate 75mm', category: 'Moulding', size: '3m length', colour: 'Gold', unit: 'lengths', quantity: 6, reorderLevel: 4, unitCost: 14000, shelfLocation: 'Rack B' },
+
+    // Glazing and board come in sheets and are cut to the mounted size.
+    { name: 'Clear glass 2mm', category: 'Glazing', size: '1220 x 915 mm', unit: 'sheets', quantity: 14, reorderLevel: 5, unitCost: 4200, shelfLocation: 'Glass bay' },
+    { name: 'Non-reflective glass', category: 'Glazing', size: '1220 x 915 mm', unit: 'sheets', quantity: 4, reorderLevel: 2, unitCost: 11500, shelfLocation: 'Glass bay' },
+    { name: 'Acrylic 2mm', category: 'Glazing', size: '1220 x 915 mm', unit: 'sheets', quantity: 7, reorderLevel: 3, unitCost: 8500, shelfLocation: 'Glass bay' },
+    { name: 'Mount board white core', category: 'Mount board', size: '1220 x 810 mm', colour: 'White', unit: 'sheets', quantity: 30, reorderLevel: 10, unitCost: 2800, shelfLocation: 'C1' },
+    { name: 'Mount board cream', category: 'Mount board', size: '1220 x 810 mm', colour: 'Cream', unit: 'sheets', quantity: 12, reorderLevel: 6, unitCost: 2800, shelfLocation: 'C1' },
+    { name: 'MDF backing 3mm', category: 'Backing board', size: '1220 x 915 mm', unit: 'sheets', quantity: 20, reorderLevel: 8, unitCost: 1900, shelfLocation: 'C2' },
+
+    // The small things that stop a job going out of the door.
+    { name: 'D-rings and cord', category: 'Fittings', unit: 'packs', quantity: 9, reorderLevel: 3, unitCost: 2500, shelfLocation: 'D1' },
+    { name: 'V-nails 12mm', category: 'Fittings', unit: 'packs', quantity: 5, reorderLevel: 2, unitCost: 6000, shelfLocation: 'D1' },
+    { name: 'Framers tape', category: 'Adhesive', unit: 'rolls', quantity: 2, reorderLevel: 2, unitCost: 3500, shelfLocation: 'D2' },
   ];
 
   for (const m of MATERIALS) {
@@ -147,7 +167,7 @@ if (materialCount === 0) {
   }
 
   console.log(`✓ Added ${MATERIALS.length} sample stock items and 1 supplier`);
-  console.log('    Note: "Toner — Yellow" is deliberately at its reorder level so you can see the low-stock alert.');
+  console.log('    Note: "Framers tape" is deliberately at its reorder level so you can see the low-stock alert.');
 } else {
   console.log(`✓ Stock already has ${materialCount} item(s)`);
 }

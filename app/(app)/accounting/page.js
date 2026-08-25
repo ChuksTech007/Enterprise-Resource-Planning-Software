@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { apiGet, apiPost } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
 import { Card, EmptyState, Loading, Modal, SectionTitle, Segmented, Spinner, StatTile } from '@/components/ui';
@@ -28,11 +28,23 @@ export default function AccountingPage() {
   const [error, setError] = useState('');
   const [rebuild, setRebuild] = useState(null);
 
+  /* Only the newest request may write to state.
+   *
+   * Each tab returns a differently shaped payload, and switching tabs on a
+   * slow connection let an older reply land after the view had moved on —
+   * the journal tab would then be handed a profit-and-loss payload, read
+   * `entries` off it, find nothing there and take the whole page down with
+   * a client-side exception. Tagging each request and ignoring stale
+   * replies is what stops that. */
+  const request = useRef(0);
+
   const load = useCallback(() => {
+    const id = ++request.current;
     setData(null);
+    setError('');
     apiGet('/api/accounting', { report: view, period })
-      .then(setData)
-      .catch((e) => setError(e.message));
+      .then((d) => request.current === id && setData(d))
+      .catch((e) => request.current === id && setError(e.message));
   }, [view, period]);
 
   useEffect(load, [load]);
@@ -50,7 +62,16 @@ export default function AccountingPage() {
     }
   }
 
-  if (error) return <Card className="p-6 text-center text-bad">{error}</Card>;
+  if (error) {
+    return (
+      <Card className="space-y-3 p-6 text-center">
+        <p className="text-bad">{error}</p>
+        <button onClick={load} className="btn-secondary btn-sm">
+          Try again
+        </button>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -79,11 +100,17 @@ export default function AccountingPage() {
             Period: <span className="font-medium text-ink">{data.label}</span>
           </p>
 
-          {view === 'overview' && <Overview data={data} fmt={fmt} />}
-          {view === 'profit-loss' && <ProfitLoss pl={data} fmt={fmt} />}
-          {view === 'balance-sheet' && <BalanceSheet bs={data} fmt={fmt} />}
-          {view === 'trial-balance' && <TrialBalance tb={data} fmt={fmt} />}
-          {view === 'journal' && <Journal data={data} fmt={fmt} />}
+          {/* Each tab needs a differently shaped payload, so each one is
+              only rendered once the field it depends on is actually there.
+              The guard above should mean a mismatch never arrives — this is
+              the second line of defence, because the cost of being wrong is
+              the whole page going blank on the owner rather than a tab
+              taking an extra moment to fill in. */}
+          {view === 'overview' && data.trialBalance && <Overview data={data} fmt={fmt} />}
+          {view === 'profit-loss' && data.income && <ProfitLoss pl={data} fmt={fmt} />}
+          {view === 'balance-sheet' && data.assets && <BalanceSheet bs={data} fmt={fmt} />}
+          {view === 'trial-balance' && data.rows && <TrialBalance tb={data} fmt={fmt} />}
+          {view === 'journal' && data.entries && <Journal data={data} fmt={fmt} />}
         </>
       )}
 

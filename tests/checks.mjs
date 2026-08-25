@@ -17,6 +17,8 @@ import { dailySummaryText, toInternational } from '../lib/notify.js';
 import { buildJobItems, summarise } from '../lib/jobs.js';
 import { quoteMessage, receiptMessage, waUrl } from '../lib/share.js';
 import * as models from '../lib/models.js';
+import { parseSize, glassSize, mouldingLengthMm, sheetsNeeded, formatSize } from '../lib/measure.js';
+import { quoteFramedPiece, nairaToKobo, koboToNaira, margin } from '../lib/pricing.js';
 
 let pass = 0;
 let fail = 0;
@@ -118,18 +120,18 @@ t('last month ends on the last day of that month', () => {
 
 section('multi-item orders');
 t('one flat product still produces one item', () => {
-  const b = buildJobItems({ jobType: 'Flyers', quantity: 500, unitPrice: 40 });
+  const b = buildJobItems({ jobType: 'Custom frame', quantity: 500, unitPrice: 40 });
   assert.equal(b.items.length, 1);
   assert.equal(b.price, 20000);
   assert.equal(b.quantity, 500);
-  assert.equal(b.jobType, 'Flyers');
+  assert.equal(b.jobType, 'Custom frame');
 });
 t('several products sum into one order total', () => {
   const b = buildJobItems({
     items: [
-      { jobType: 'Flyers', quantity: 500, unitPrice: 40 },
-      { jobType: 'Business cards', quantity: 100, unitPrice: 80 },
-      { jobType: 'Banner', quantity: 1, total: 9000 },
+      { jobType: 'Custom frame', quantity: 500, unitPrice: 40 },
+      { jobType: 'Mount only', quantity: 100, unitPrice: 80 },
+      { jobType: 'Mirror', quantity: 1, total: 9000 },
     ],
   });
   assert.equal(b.items.length, 3);
@@ -137,12 +139,12 @@ t('several products sum into one order total', () => {
   assert.equal(b.quantity, 601);
 });
 t('an explicit item total beats qty x unit price', () => {
-  const b = buildJobItems({ items: [{ jobType: 'Banner', quantity: 3, unitPrice: 5000, total: 12000 }] });
+  const b = buildJobItems({ items: [{ jobType: 'Mirror', quantity: 3, unitPrice: 5000, total: 12000 }] });
   assert.equal(b.price, 12000);
 });
 t('the headline job type is the first item', () => {
-  const b = buildJobItems({ items: [{ jobType: 'Banner', quantity: 1 }, { jobType: 'Flyers', quantity: 100 }] });
-  assert.equal(b.jobType, 'Banner');
+  const b = buildJobItems({ items: [{ jobType: 'Mirror', quantity: 1 }, { jobType: 'Custom frame', quantity: 100 }] });
+  assert.equal(b.jobType, 'Mirror');
 });
 t('an unknown job type falls back rather than throwing', () => {
   assert.equal(buildJobItems({ items: [{ jobType: 'Nonsense', quantity: 1 }] }).jobType, 'Other');
@@ -150,15 +152,15 @@ t('an unknown job type falls back rather than throwing', () => {
 t('the summary names the first item and counts the rest', () => {
   assert.equal(
     summarise([
-      { quantity: 500, description: 'A5 flyers' },
-      { quantity: 1, description: 'Banner' },
-      { quantity: 100, description: 'Cards' },
+      { quantity: 500, description: 'A3 print, oak moulding' },
+      { quantity: 1, description: 'Bevelled mirror' },
+      { quantity: 100, description: 'Mount, 3 aperture' },
     ]),
-    '500 x A5 flyers + 2 more items'
+    '500 x A3 print, oak moulding + 2 more items'
   );
 });
 t('a single-item summary has no "+ more"', () => {
-  assert.equal(summarise([{ quantity: 500, description: 'A5 flyers' }]), '500 x A5 flyers');
+  assert.equal(summarise([{ quantity: 500, description: 'A3 print, oak moulding' }]), '500 x A3 print, oak moulding');
 });
 
 section('messages sent to the customer');
@@ -172,15 +174,15 @@ const quote = quoteMessage(
     discount: 1000,
     deadline: new Date('2026-07-30T09:00:00Z'),
     items: [
-      { jobType: 'Flyers', description: 'A5 flyers', quantity: 500, specs: { size: 'A5' }, total: 20000 },
-      { jobType: 'Banner', description: 'Roll-up banner', quantity: 1, specs: {}, total: 9000 },
+      { jobType: 'Custom frame', description: 'A3 print, oak moulding', quantity: 500, specs: { size: '24 x 36 in' }, total: 20000 },
+      { jobType: 'Mirror', description: 'Bevelled mirror', quantity: 1, specs: {}, total: 9000 },
     ],
   },
   shopSettings
 );
 t('the quote lists every item', () => {
-  assert.ok(quote.includes('500 x A5 flyers'), quote);
-  assert.ok(quote.includes('1 x Roll-up banner'), quote);
+  assert.ok(quote.includes('500 x A3 print, oak moulding'), quote);
+  assert.ok(quote.includes('1 x Bevelled mirror'), quote);
 });
 t('the quote totals net of discount', () => assert.ok(quote.includes('TOTAL: ₦28,000.00'), quote));
 t('the quote states when it will be ready', () => assert.ok(quote.includes('Ready by:')));
@@ -356,7 +358,7 @@ const report = {
   byMethod: { cash: 62500, transfer: 80000, pos: 25000, online: 20000 },
   register: { sessions: 2, shortfall: 1500, over: 0 },
   staff: [{ name: 'Ada', collected: 120000, jobs: 6 }, { name: 'Musa', collected: 67500, jobs: 5 }],
-  jobTypes: [{ jobType: 'Banner', value: 90000 }],
+  jobTypes: [{ jobType: 'Mirror', value: 90000 }],
   wastage: [{ name: 'Art paper 300gsm' }],
   expensesByCategory: [
     { category: 'Diesel / Fuel', total: 30000 },
@@ -398,7 +400,163 @@ t('expense figures are hidden from cashiers', () => {
   assert.equal(forCashier.summary.collected, 187500);
 });
 
+
+/* ------------------------------------------------------------------ *
+ * Framing: the size on the counter is an input to money.
+ *
+ * In a print shop a price is looked up. Here it is worked out from the piece
+ * in front of you, every time — so these are the sums that decide whether a
+ * quote is right, and they are checked the way the money rules are.
+ * ------------------------------------------------------------------ */
+
+section('sizes as staff actually write them');
+t('inches, the way a customer says it', () =>
+  assert.deepEqual(parseSize('24 x 36 in'), { widthMm: 610, heightMm: 914 }));
+t('millimetres, the way the workshop cuts', () =>
+  assert.deepEqual(parseSize('600 x 900 mm'), { widthMm: 600, heightMm: 900 }));
+t('centimetres convert too', () =>
+  assert.deepEqual(parseSize('60 x 90 cm'), { widthMm: 600, heightMm: 900 }));
+t('a bare "24x36" is inches in a framing shop', () =>
+  assert.deepEqual(parseSize('24x36'), { widthMm: 610, heightMm: 914 }));
+t('nonsense is refused, not guessed at', () => assert.throws(() => parseSize('big')));
+
+section('a mount grows the glass');
+t('the border pushes out all four sides', () =>
+  assert.deepEqual(glassSize(600, 900, 50), { widthMm: 700, heightMm: 1000 }));
+t('no mount, no growth', () =>
+  assert.deepEqual(glassSize(600, 900, 0), { widthMm: 600, heightMm: 900 }));
+
+section('moulding costs more than the bare perimeter');
+t('mitres add 2x the moulding width at each corner', () => {
+  // 600x900 has a 3000mm perimeter. A 40mm moulding mitred at 45 degrees eats
+  // 8 x 40 = 320mm more. A shop ordering by perimeter is short on every frame.
+  assert.equal(mouldingLengthMm(600, 900, 40), 3320);
+});
+t('chunkier moulding, bigger shortfall', () =>
+  assert.equal(mouldingLengthMm(600, 900, 75), 3600));
+t('wastage is the offcut that will not serve the next job', () =>
+  assert.equal(mouldingLengthMm(600, 900, 40, { wastageMm: 150 }), 3470));
+
+section('glass is bought in sheets, not square metres');
+t('over half a sheet consumes a whole sheet', () => {
+  // The offcut from a rectangle is mostly unusable, so this rounds up.
+  assert.equal(sheetsNeeded(700 * 1000, 1000, 1000), 1);
+  assert.equal(sheetsNeeded(1_100_000, 1000, 1000), 2);
+});
+t('a measured yield means more sheets, not fewer', () =>
+  assert.ok(sheetsNeeded(900_000, 1000, 1000, { yieldPct: 60 }) > sheetsNeeded(900_000, 1000, 1000)));
+
+section('pricing a framed piece');
+const PARTS = {
+  moulding: { name: 'Oak 40mm', price: 3500, cost: 1800, mouldingWidthMm: 40, wastageMm: 150 },
+  glazing: { name: 'Clear glass', price: 8000, cost: 4500 },
+  mountBoard: { name: 'White core', price: 6000, cutting: 800 },
+  backing: { name: 'MDF 3mm', price: 2500 },
+};
+
+t('everything is cut to the mounted size, not the artwork size', () => {
+  const q = quoteFramedPiece({ artworkWidthMm: 600, artworkHeightMm: 900, mountBorderMm: 50 }, PARTS);
+  assert.equal(q.glassWidthMm, 700);
+  assert.equal(q.glassHeightMm, 1000);
+  // Glazing is charged on the grown glass, not on 600x900.
+  const glazing = q.lines.find((l) => l.part === 'glazing');
+  assert.equal(glazing.amount, money((8000 * 700000) / 1_000_000));
+});
+
+t('a canvas needs no glass and is charged for none', () => {
+  const q = quoteFramedPiece(
+    { artworkWidthMm: 600, artworkHeightMm: 900 },
+    { moulding: PARTS.moulding }
+  );
+  assert.ok(!q.lines.some((l) => l.part === 'glazing'));
+  assert.ok(!q.lines.some((l) => l.part === 'mount'));
+});
+
+t('no mount border means no mount charge, even with board chosen', () => {
+  const q = quoteFramedPiece({ artworkWidthMm: 600, artworkHeightMm: 900, mountBorderMm: 0 }, PARTS);
+  assert.ok(!q.lines.some((l) => l.part === 'mount'));
+});
+
+t('each aperture is charged, because each is cut by hand', () => {
+  const one = quoteFramedPiece({ artworkWidthMm: 600, artworkHeightMm: 900, mountBorderMm: 50, mountApertures: 1 }, PARTS);
+  const three = quoteFramedPiece({ artworkWidthMm: 600, artworkHeightMm: 900, mountBorderMm: 50, mountApertures: 3 }, PARTS);
+  assert.equal(money(three.total - one.total), money(800 * 2));
+});
+
+t('the minimum charge floors one piece, before quantity', () => {
+  // Ten tiny frames is still ten pieces of work.
+  const q = quoteFramedPiece(
+    { artworkWidthMm: 50, artworkHeightMm: 50, quantity: 10, minCharge: 5000 },
+    { moulding: PARTS.moulding }
+  );
+  assert.equal(q.unit, 5000);
+  assert.equal(q.total, 50000);
+});
+
+t('a discount comes off the order, not off each piece', () => {
+  const q = quoteFramedPiece(
+    { artworkWidthMm: 600, artworkHeightMm: 900, quantity: 2, discount: 1000 },
+    { moulding: PARTS.moulding }
+  );
+  assert.equal(money(q.total), money(q.gross - 1000));
+});
+
+t('a discount can never make the total negative', () => {
+  const q = quoteFramedPiece(
+    { artworkWidthMm: 600, artworkHeightMm: 900, discount: 9_999_999 },
+    { moulding: PARTS.moulding }
+  );
+  assert.equal(q.total, 0);
+});
+
+section('naira in, naira out, kobo in between');
+t('the seam converts both ways without drift', () => {
+  assert.equal(nairaToKobo(1500.5), 150050);
+  assert.equal(koboToNaira(150050), 1500.5);
+});
+t('float dust cannot survive the round trip', () => {
+  assert.equal(koboToNaira(nairaToKobo(0.1 + 0.2)), 0.3);
+});
+t('a quote total is clean naira, never 33669.949999', () => {
+  const q = quoteFramedPiece({ artworkWidthMm: 610, artworkHeightMm: 914, mountBorderMm: 50 }, PARTS);
+  assert.equal(q.total, money(q.total));
+});
+
+section('margin the owner can trust');
+t('profit and margin are worked from the same measured quantities', () => {
+  const m = margin(10000, 6000);
+  assert.equal(m.profitKobo, 4000);
+  assert.equal(m.marginBp, 4000); // 40.00%
+});
+t('a free job has no margin rather than an infinite one', () =>
+  assert.equal(margin(0, 0).marginBp, 0));
+
+section('a job remembers what size it was');
+t('specs sent as an object are kept, not dropped', () => {
+  // This regressed once: the price saved and the size vanished, so the
+  // workshop had a ticket with no measurement on it.
+  const b = buildJobItems({ jobType: 'Custom frame', quantity: 1, price: 4500, specs: { size: '12/15', grade: 'bold' } });
+  assert.equal(b.specs.size, '12/15');
+  assert.equal(b.items[0].specs.size, '12/15');
+});
+t('the older flat form still works', () => {
+  const b = buildJobItems({ jobType: 'Custom frame', quantity: 1, price: 4500, size: '16/20' });
+  assert.equal(b.specs.size, '16/20');
+});
+t('a size survives onto every line of a multi-picture order', () => {
+  const b = buildJobItems({
+    items: [
+      { jobType: 'Custom frame', quantity: 1, total: 4500, specs: { size: '12/15' } },
+      { jobType: 'Canvas stretch', quantity: 2, total: 1600, specs: { size: '8/10' } },
+    ],
+  });
+  assert.equal(b.items[0].specs.size, '12/15');
+  assert.equal(b.items[1].specs.size, '8/10');
+});
+
 /* ------------------------------------------------------------------ */
 
-console.log(`\n${pass} passed, ${fail} failed\n`);
+console.log(`
+${pass} passed, ${fail} failed
+`);
 process.exit(fail ? 1 : 0);

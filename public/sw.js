@@ -11,7 +11,11 @@
  * saved — which is the thing that must never be ambiguous.
  * ------------------------------------------------------------------ */
 
-const VERSION = 'v1';
+/* Taken from the ?v= the page registered this worker with, which is the
+ * build id. It MUST change when the app is rebuilt: the caches below hold
+ * HTML naming that build’s scripts, and a later build deletes them.
+ * Anything not carrying the current id is cleared on activate. */
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'v1';
 const SHELL_CACHE = `printpress-shell-${VERSION}`;
 const DATA_CACHE = `printpress-data-${VERSION}`;
 

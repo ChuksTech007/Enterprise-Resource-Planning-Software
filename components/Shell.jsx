@@ -11,6 +11,7 @@ import { Modal } from './ui';
  * Everything else is one tap away behind "More". */
 const PRIMARY = [
   { href: '/', label: 'Home', icon: '⌂' },
+  { href: '/quote', label: 'Quote', icon: '▢' },
   { href: '/sales/new', label: 'New sale', icon: '＋' },
   { href: '/jobs', label: 'Jobs', icon: '🖨' },
   { href: '/debts', label: 'Owing', icon: '⏳' },
@@ -18,6 +19,7 @@ const PRIMARY = [
 
 const ALL_LINKS = [
   { href: '/', label: 'Dashboard', group: 'Daily' },
+  { href: '/quote', label: 'Quote a frame', group: 'Daily' },
   { href: '/sales/new', label: 'New sale', group: 'Daily' },
   { href: '/jobs', label: 'Jobs & quotes', group: 'Daily' },
   { href: '/sales', label: 'Sales & invoices', group: 'Daily' },
