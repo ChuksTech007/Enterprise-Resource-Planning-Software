@@ -179,22 +179,42 @@ function OpenTill({ data, fmt, onClosed }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className={'grid grid-cols-2 gap-3 ' + (data.isOwner ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
+        {/*
+          What should be in the drawer right now — owner only.
+
+          Deliberately hidden from cashiers. The count below is a control, and
+          a cashier who can see the expected figure before counting writes
+          that figure down instead of counting; the shortfall it exists to
+          catch then never appears.
+
+          The owner needs it though, and without closing anything: this till
+          stays open for weeks, so "what should be in the drawer?" is a
+          question about right now, not about the end of a shift.
+        */}
+        {data.isOwner ? (
+          <StatTile
+            label="Should be in drawer now"
+            value={fmt(live.expectedCash, { decimals: false })}
+            sub={`Float ${fmt(open.openingFloat, { decimals: false })} + cash taken`}
+            tone="brand"
+          />
+        ) : null}
         <StatTile
           label="Till opened"
           value={new Date(open.openedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-          sub={`Float ${fmt(open.openingFloat)}`}
+          sub={`${new Date(open.openedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · float ${fmt(open.openingFloat, { decimals: false })}`}
         />
         <StatTile
           label="Payments taken"
           value={live.salesCount}
           sub={live.totals.cashOut > 0 ? `${fmt(live.totals.cashOut, { decimals: false })} paid out of till` : undefined}
         />
-        <StatTile label="Non-cash today" value={fmt(live.totals.transfer + live.totals.pos + live.totals.online, { decimals: false })} sub="Transfer, POS, online" />
+        <StatTile label="Non-cash this session" value={fmt(live.totals.transfer + live.totals.pos + live.totals.online, { decimals: false })} sub="Transfer, POS, online" />
         <StatTile label="Refunds" value={fmt(live.totals.refunds, { decimals: false })} tone={live.totals.refunds > 0 ? 'warn' : 'default'} />
       </div>
 
-      <MethodBreakdown byMethod={live.totals} fmt={fmt} title="This shift, by method" />
+      <MethodBreakdown byMethod={live.totals} fmt={fmt} title="This till session, by method" />
 
       <Card className="p-5">
         <SectionTitle>Close the till</SectionTitle>
