@@ -55,6 +55,14 @@ export default function DashboardPage() {
           tone={data.outstanding.total > 0 ? 'warn' : 'default'}
         />
         <StatTile label="Jobs today" value={data.today.jobsCreated} sub={data.rushCount ? `${data.rushCount} rush job(s) open` : 'No rush jobs'} />
+        {isOwner && data.moneyLeft !== undefined ? (
+          <StatTile
+            label="Money left"
+            value={fmt(data.moneyLeft, { decimals: false })}
+            sub="Everything in, less everything out"
+            tone={data.moneyLeft >= 0 ? 'brand' : 'bad'}
+          />
+        ) : null}
         <StatTile
           label="Ready for pickup"
           value={data.readyForPickup.length}

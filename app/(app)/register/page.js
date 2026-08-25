@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPut } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
 import MethodBreakdown from '@/components/MethodBreakdown';
-import { Card, ErrorNote, Field, Loading, MoneyInput, SectionTitle, Spinner, StatTile } from '@/components/ui';
+import DataTable from '@/components/DataTable';
+import MoneyPosition from '@/components/MoneyPosition';
+import { Card, ErrorNote, Field, Loading, MoneyInput, SectionTitle, Spinner, StatTile, EmptyState } from '@/components/ui';
 
 /**
  * End-of-day cash reconciliation.
@@ -29,9 +31,67 @@ export default function RegisterPage() {
   if (error) return <Card className="p-6 text-center text-bad">{error}</Card>;
   if (!data) return <Loading />;
 
+  const historyColumns = [
+    {
+      key: 'closedAt',
+      label: 'Closed',
+      render: (h) =>
+        new Date(h.closedAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+    },
+    { key: 'userName', label: 'By' },
+    { key: 'salesCount', label: 'Payments', align: 'right', tnum: true, hideOn: 'sm' },
+    {
+      key: 'expectedCash',
+      label: 'Expected',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      render: (h) => fmt(h.expectedCash),
+    },
+    {
+      key: 'countedCash',
+      label: 'Counted',
+      align: 'right',
+      tnum: true,
+      render: (h) => <span className="font-semibold">{fmt(h.countedCash)}</span>,
+    },
+    {
+      key: 'variance',
+      label: 'Over / short',
+      align: 'right',
+      tnum: true,
+      /* The column this whole screen exists for. A run of red down it is a
+       * pattern worth a conversation; one bad day is not. */
+      render: (h) => (
+        <span
+          className={
+            'font-semibold ' +
+            (h.variance === 0 ? 'text-good' : h.variance < 0 ? 'text-bad' : 'text-warn')
+          }
+        >
+          {h.variance === 0 ? 'Balanced' : (h.variance < 0 ? 'short ' : 'over ') + fmt(Math.abs(h.variance))}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Cash-up</h1>
+
+      {/* The business's money, above the drawer's.
+        *
+        * Two figures that must not be confused: this counts every naira by
+        * every method, including transfers and card payments that never touch
+        * the drawer. The count below is one drawer against physical cash. They
+        * are stacked rather than merged so the cashier can see both and
+        * reconcile only the one they can hold. */}
+      {isOwner ? <MoneyPosition compact /> : null}
 
       {data.open ? (
         <OpenTill data={data} fmt={fmt} onClosed={() => { load(); refresh(); toast('Till closed'); }} />
@@ -39,50 +99,17 @@ export default function RegisterPage() {
         <OpenTillForm onOpened={() => { load(); refresh(); toast('Till opened'); }} />
       )}
 
-      <Card>
-        <div className="border-b border-line px-4 py-3">
-          <h2 className="text-sm font-semibold">{isOwner ? 'All closed shifts' : 'Your past shifts'}</h2>
-        </div>
-        {data.history.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-muted">No shifts closed yet.</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {data.history.map((s) => (
-              <li key={s._id} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{s.userName}</p>
-                    <p className="text-xs text-muted">
-                      {new Date(s.closedAt).toLocaleString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      · {s.salesCount} payment(s)
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="tnum text-sm">
-                      counted <span className="font-semibold">{fmt(s.countedCash)}</span>
-                    </p>
-                    <p
-                      className={`tnum text-xs font-semibold ${
-                        s.variance === 0 ? 'text-good' : s.variance < 0 ? 'text-bad' : 'text-warn'
-                      }`}
-                    >
-                      {s.variance === 0
-                        ? 'Balanced'
-                        : `${s.variance < 0 ? 'Short' : 'Over'} ${fmt(Math.abs(s.variance))}`}
-                    </p>
-                  </div>
-                </div>
-                {s.notes ? <p className="mt-1 text-xs text-muted">“{s.notes}”</p> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <div>
+        <h2 className="mb-2 text-sm font-semibold">
+          {isOwner ? 'All closed shifts' : 'Your past shifts'}
+        </h2>
+        <DataTable
+          columns={historyColumns}
+          rows={data.history || []}
+          minWidth={720}
+          empty={<EmptyState title="No shift has been closed yet" />}
+        />
+      </div>
     </div>
   );
 }

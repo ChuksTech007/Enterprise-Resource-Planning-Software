@@ -22,3 +22,6 @@ New/
 # Permission list this machine accumulates while working: local, and full of
 # one-off commands with absolute paths.
 .claude/settings.json
+
+# Scratch scripts used while editing.
+.*.mjs

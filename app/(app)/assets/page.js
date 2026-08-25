@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
+import DataTable from '@/components/DataTable';
 import {
   Card,
   Chip,
@@ -44,6 +45,54 @@ export default function AssetsPage() {
   useEffect(load, [load]);
 
   if (!data) return <Loading />;
+
+  const assetColumns = [
+    {
+      key: 'name',
+      label: 'Equipment',
+      render: (a) => <span className="block max-w-[16rem] truncate font-medium">{a.name}</span>,
+    },
+    { key: 'category', label: 'Category', hideOn: 'sm' },
+    {
+      key: 'purchaseDate',
+      label: 'Bought',
+      hideOn: 'sm',
+      render: (a) =>
+        new Date(a.purchaseDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+    },
+    {
+      key: 'cost',
+      label: 'Cost',
+      align: 'right',
+      tnum: true,
+      hideOn: 'md',
+      render: (a) => fmt(a.cost, { decimals: false }),
+    },
+    {
+      key: 'bookValue',
+      label: 'Worth now',
+      align: 'right',
+      tnum: true,
+      render: (a) => <span className="font-semibold">{fmt(a.bookValue)}</span>,
+    },
+    {
+      key: 'life',
+      label: 'Life left',
+      /* The bar earns its place: the figure alone does not say whether a
+       * machine is nearly worn out, and that is what decides replacing it. */
+      render: (a) => (
+        <span className="flex items-center gap-2">
+          <span className="h-1.5 w-24 overflow-hidden rounded-full bg-page">
+            <span
+              className={'block h-full rounded-full ' + (a.fullyDepreciated ? 'bg-faint' : 'bg-brand')}
+              style={{ width: Math.min(100, Math.max(0, (a.bookValue / a.cost) * 100)) + '%' }}
+            />
+          </span>
+          {a.fullyDepreciated ? <Chip tone="neutral">Written off</Chip> : null}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -102,44 +151,12 @@ export default function AssetsPage() {
             }
           />
         ) : (
-          <ul className="divide-y divide-line">
-            {data.assets.map((a) => (
-              <li key={a._id} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{a.name}</p>
-                    <p className="truncate text-xs text-muted">
-                      {a.category} · bought {new Date(a.purchaseDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
-                      {a.serialNumber ? ` · ${a.serialNumber}` : ''}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="tnum font-semibold">{fmt(a.bookValue)}</p>
-                    <p className="text-xs text-faint">cost {fmt(a.cost, { decimals: false })}</p>
-                  </div>
-                </div>
-
-                {/* How much life is left in the machine, at a glance. */}
-                <div className="mt-2">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-page">
-                    <div
-                      className={`h-full rounded-full ${a.fullyDepreciated ? 'bg-faint' : 'bg-brand'}`}
-                      style={{ width: `${Math.min(100, Math.max(0, (a.bookValue / a.cost) * 100))}%` }}
-                    />
-                  </div>
-                  <div className="mt-1 flex items-center gap-2">
-                    {a.fullyDepreciated ? (
-                      <Chip tone="neutral">Fully written off</Chip>
-                    ) : (
-                      <span className="text-xs text-faint">
-                        {fmt(a.monthlyDepreciation)}/month · about {a.monthsRemaining} month(s) left
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <DataTable
+            columns={assetColumns}
+            rows={data.assets || []}
+            minWidth={860}
+            empty={<EmptyState title="No equipment recorded" />}
+          />
         )}
       </Card>
 

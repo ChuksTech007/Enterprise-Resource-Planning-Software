@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/client';
-import { Card, Chip, EmptyState, Loading, Segmented } from '@/components/ui';
+import DataTable from '@/components/DataTable';
+import { Chip, EmptyState, Loading, Segmented } from '@/components/ui';
 
 const PERIODS = [
   { value: 'today', label: 'Today' },
@@ -37,6 +38,43 @@ export default function AuditPage() {
 
   const groups = [...new Set((data?.actions || []).map((a) => a.split('.')[0]))];
 
+  const columns = [
+    {
+      key: 'createdAt',
+      label: 'When',
+      /* Date and time together and first: the log is read to answer "what
+       * happened around then", so the clock is the thing being scanned. */
+      render: (l) =>
+        new Date(l.createdAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+    },
+    {
+      key: 'userName',
+      label: 'Who',
+      render: (l) => (
+        <span>
+          {l.userName}
+          {l.role ? <span className="ml-1 text-xs text-faint">{l.role}</span> : null}
+        </span>
+      ),
+    },
+    {
+      key: 'label',
+      label: 'What happened',
+      render: (l) => <span className="block max-w-[26rem] truncate">{l.label || l.action}</span>,
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      hideOn: 'sm',
+      render: (l) => <Chip tone={TONE_FOR(l.action)}>{l.action}</Chip>,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Activity log</h1>
@@ -53,36 +91,13 @@ export default function AuditPage() {
         ))}
       </select>
 
-      <Card>
-        {!data ? (
-          <Loading />
-        ) : data.logs.length === 0 ? (
-          <EmptyState title="Nothing logged" hint="No activity recorded in this period." />
-        ) : (
-          <ul className="divide-y divide-line">
-            {data.logs.map((l) => (
-              <li key={l._id} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{l.label || l.action}</p>
-                    <p className="truncate text-xs text-muted">
-                      {l.userName}
-                      {l.role ? ` (${l.role})` : ''} ·{' '}
-                      {new Date(l.createdAt).toLocaleString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                  <Chip tone={TONE_FOR(l.action)}>{l.action}</Chip>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <DataTable
+        columns={columns}
+        rows={data?.logs || []}
+        loading={!data}
+        minWidth={700}
+        empty={<EmptyState title="Nothing recorded yet" />}
+      />
     </div>
   );
 }

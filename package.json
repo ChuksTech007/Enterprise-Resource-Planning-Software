@@ -11,8 +11,9 @@
     "seed": "node scripts/seed.mjs",
     "reset-password": "node scripts/reset-password.mjs",
     "rebuild-ledger": "node scripts/rebuild-ledger.mjs",
-    "test": "node tests/checks.mjs",
-    "test:db": "node tests/integration.mjs"
+    "test": "node tests/references.mjs && node tests/checks.mjs",
+    "test:db": "node tests/integration.mjs",
+    "test:refs": "node tests/references.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

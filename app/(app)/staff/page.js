@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPatch } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
-import { Card, Chip, ErrorNote, Field, Loading, Modal, Spinner } from '@/components/ui';
+import DataTable from '@/components/DataTable';
+import { Card, Chip, EmptyState, ErrorNote, Field, Loading, Modal, Spinner } from '@/components/ui';
 
 export default function StaffPage() {
   const { toast, user } = useApp();
@@ -28,6 +29,59 @@ export default function StaffPage() {
       toast(e.message, 'bad');
     }
   }
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (u) => (
+        <span className="flex items-center gap-2">
+          <span className="max-w-[12rem] truncate font-medium">{u.name}</span>
+          {!u.active ? <Chip tone="bad">Disabled</Chip> : null}
+        </span>
+      ),
+    },
+    { key: 'username', label: 'Username', render: (u) => '@' + u.username },
+    {
+      key: 'role',
+      label: 'Role',
+      render: (u) => (
+        <Chip tone={u.role === 'owner' ? 'brand' : 'neutral'}>
+          {u.role === 'owner' ? 'Owner' : 'Cashier'}
+        </Chip>
+      ),
+    },
+    {
+      key: 'lastLoginAt',
+      label: 'Last signed in',
+      hideOn: 'sm',
+      /* Worth a column of its own: an account nobody has used for months is
+       * an account that should probably be disabled. */
+      render: (u) =>
+        u.lastLoginAt ? (
+          new Date(u.lastLoginAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })
+        ) : (
+          <span className="text-faint">never</span>
+        ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      render: (u) => (
+        <span className="flex justify-end gap-1 whitespace-nowrap">
+          <button onClick={() => setEditing(u)} className="btn-ghost btn-sm">
+            Edit
+          </button>
+          {String(u._id) !== String(user?.id) ? (
+            <button onClick={() => toggleActive(u)} className="btn-ghost btn-sm">
+              {u.active ? 'Disable' : 'Enable'}
+            </button>
+          ) : null}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -57,37 +111,13 @@ export default function StaffPage() {
         </dl>
       </Card>
 
-      <Card>
-        <ul className="divide-y divide-line">
-          {users.map((u) => (
-            <li key={u._id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 truncate font-medium">
-                  {u.name}
-                  <Chip tone={u.role === 'owner' ? 'brand' : 'neutral'}>{u.role === 'owner' ? 'Owner' : 'Cashier'}</Chip>
-                  {!u.active ? <Chip tone="bad">Disabled</Chip> : null}
-                </p>
-                <p className="truncate text-xs text-muted">
-                  @{u.username}
-                  {u.lastLoginAt
-                    ? ` · last signed in ${new Date(u.lastLoginAt).toLocaleDateString('en-GB')}`
-                    : ' · never signed in'}
-                </p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <button onClick={() => setEditing(u)} className="btn-ghost btn-sm">
-                  Edit
-                </button>
-                {String(u._id) !== String(user?.id) && (
-                  <button onClick={() => toggleActive(u)} className="btn-ghost btn-sm">
-                    {u.active ? 'Disable' : 'Enable'}
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <DataTable
+          columns={columns}
+          rows={users || []}
+          loading={!users}
+          minWidth={720}
+          empty={<EmptyState title="No staff yet" />}
+        />
 
       {(adding || editing) && (
         <StaffModal

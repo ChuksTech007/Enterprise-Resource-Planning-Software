@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
+import DataTable from '@/components/DataTable';
 import { Card, Chip, EmptyState, Loading, Segmented } from '@/components/ui';
 
 const LABELS = {
@@ -56,6 +57,64 @@ export default function MovementsPage() {
         .reduce((s, m) => s + m.quantity * (m.unitCost || 0), 0)
     : null;
 
+  const columns = [
+    {
+      key: 'createdAt',
+      label: 'When',
+      render: (m) =>
+        new Date(m.createdAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+    },
+    {
+      key: 'materialName',
+      label: 'Item',
+      render: (m) => <span className="block max-w-[14rem] truncate font-medium">{m.materialName}</span>,
+    },
+    {
+      key: 'type',
+      label: 'Why',
+      render: (m) => <Chip tone={TONES[m.type]}>{LABELS[m.type] || m.type}</Chip>,
+    },
+    {
+      key: 'delta',
+      label: 'Change',
+      align: 'right',
+      tnum: true,
+      /* Signed, and coloured. The whole point of this log is spotting stock
+       * leaving that nobody expected, which is a column of red. */
+      render: (m) => (
+        <span className={'font-bold ' + (m.delta < 0 ? 'text-bad' : 'text-good')}>
+          {m.delta > 0 ? '+' : ''}
+          {m.delta} <span className="text-xs font-normal text-muted">{m.unit}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'balanceAfter',
+      label: 'Left',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      render: (m) => <span className="text-muted">{m.balanceAfter}</span>,
+    },
+    { key: 'userName', label: 'Who', hideOn: 'md', render: (m) => m.userName || 'system' },
+    {
+      key: 'reason',
+      label: 'Note',
+      hideOn: 'md',
+      render: (m) => (
+        <span className="block max-w-[16rem] truncate text-muted">
+          {m.jobNumber ? m.jobNumber + ' ' : ''}
+          {m.reason || ''}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Stock movements</h1>
@@ -80,46 +139,13 @@ export default function MovementsPage() {
         </div>
       ) : null}
 
-      <Card>
-        {!data ? (
-          <Loading />
-        ) : data.movements.length === 0 ? (
-          <EmptyState title="No movements" hint="Nothing has moved in or out of stock in this period." />
-        ) : (
-          <ul className="divide-y divide-line">
-            {data.movements.map((m) => (
-              <li key={m._id} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{m.materialName}</p>
-                    <p className="truncate text-xs text-muted">
-                      {new Date(m.createdAt).toLocaleString('en-GB', {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      · {m.userName || 'system'}
-                      {m.jobNumber ? ` · ${m.jobNumber}` : ''}
-                    </p>
-                    {m.reason ? <p className="truncate text-xs text-faint">{m.reason}</p> : null}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className={`tnum font-bold ${m.delta < 0 ? 'text-bad' : 'text-good'}`}>
-                      {m.delta > 0 ? '+' : ''}
-                      {m.delta} <span className="text-xs font-normal text-muted">{m.unit}</span>
-                    </p>
-                    <p className="tnum text-xs text-faint">balance {m.balanceAfter}</p>
-                  </div>
-                </div>
-                <div className="mt-1.5">
-                  <Chip tone={TONES[m.type]}>{LABELS[m.type] || m.type}</Chip>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <DataTable
+        columns={columns}
+        rows={data?.movements || []}
+        loading={!data}
+        minWidth={820}
+        empty={<EmptyState title="No movements yet" hint="Stock coming in and going out is listed here." />}
+      />
     </div>
   );
 }

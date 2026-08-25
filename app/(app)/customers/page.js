@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
-import { Card, Chip, EmptyState, Loading, Segmented } from '@/components/ui';
+import DataTable from '@/components/DataTable';
+import { Chip, EmptyState, Loading, Segmented } from '@/components/ui';
 
 const VIEWS = [
   { value: 'all', label: 'Everyone' },
@@ -28,6 +29,47 @@ export default function CustomersPage() {
       .catch(() => setCustomers([]));
   }, [view, q]);
 
+  const columns = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (c) => (
+        <span className="flex items-center gap-1.5">
+          <span className="max-w-[14rem] truncate font-medium">{c.name}</span>
+          {c.isRepeat ? <Chip tone="brand">Repeat</Chip> : null}
+        </span>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      /* The number is how a customer is found again when they come back for
+       * a job, so it earns a column rather than sitting in small print. */
+      render: (c) => c.phone || <span className="text-faint">—</span>,
+    },
+    { key: 'jobCount', label: 'Jobs', align: 'right', tnum: true, hideOn: 'sm' },
+    {
+      key: 'totalBilled',
+      label: 'Billed',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      render: (c) => fmt(c.totalBilled, { decimals: false }),
+    },
+    {
+      key: 'outstanding',
+      label: 'Owing',
+      align: 'right',
+      tnum: true,
+      render: (c) =>
+        c.outstanding > 0 ? (
+          <span className="font-semibold text-bad">{fmt(c.outstanding)}</span>
+        ) : (
+          <span className="text-xs text-faint">Settled</span>
+        ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Customers</h1>
@@ -36,42 +78,19 @@ export default function CustomersPage() {
 
       <input className="field" placeholder="Search by name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
 
-      <Card>
-        {!customers ? (
-          <Loading />
-        ) : customers.length === 0 ? (
+      <DataTable
+        columns={columns}
+        rows={customers || []}
+        loading={!customers}
+        hrefFor={(c) => `/customers/${c._id}`}
+        minWidth={760}
+        empty={
           <EmptyState
             title="No customers here"
             hint="Customers are created automatically the first time you record a job or sale for them."
           />
-        ) : (
-          <ul className="divide-y divide-line">
-            {customers.map((c) => (
-              <li key={c._id}>
-                <Link href={`/customers/${c._id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-page">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 truncate font-medium">
-                      {c.name}
-                      {c.isRepeat ? <Chip tone="brand">Repeat</Chip> : null}
-                    </p>
-                    <p className="truncate text-xs text-muted">
-                      {c.phone || 'No phone'} · {c.jobCount} job{c.jobCount === 1 ? '' : 's'}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="tnum text-sm font-semibold">{fmt(c.totalBilled, { decimals: false })}</p>
-                    {c.outstanding > 0 ? (
-                      <p className="tnum text-xs font-semibold text-bad">{fmt(c.outstanding)} owing</p>
-                    ) : (
-                      <p className="text-xs text-faint">Settled</p>
-                    )}
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+        }
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet, apiPost } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
+import DataTable from '@/components/DataTable';
 import { Card, EmptyState, ErrorNote, Field, Loading, Modal, MoneyInput, Spinner, StatTile } from '@/components/ui';
 
 /**
@@ -31,6 +32,72 @@ export default function PayablesPage() {
 
   if (!data) return <Loading />;
 
+  const supplierColumns = [
+    {
+      key: 'name',
+      label: 'Supplier',
+      render: (x) => <span className="block max-w-[16rem] truncate font-medium">{x.name}</span>,
+    },
+    {
+      key: 'orders',
+      label: 'Unpaid orders',
+      align: 'right',
+      tnum: true,
+      render: (x) => x.orders,
+    },
+    {
+      key: 'owed',
+      label: 'Owed',
+      align: 'right',
+      tnum: true,
+      render: (x) => <span className="font-bold text-bad">{fmt(x.owed)}</span>,
+    },
+  ];
+
+  const orderColumns = [
+    { key: 'poNumber', label: 'Order', render: (o) => <span className="whitespace-nowrap">{o.poNumber}</span> },
+    {
+      key: 'supplierName',
+      label: 'Supplier',
+      render: (o) => <span className="block max-w-[14rem] truncate font-medium">{o.supplierName}</span>,
+    },
+    {
+      key: 'total',
+      label: 'Received',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      /* Only delivered goods count as owed, so this is what actually
+       * arrived rather than what was ordered. */
+      render: (o) => fmt(o.total),
+    },
+    {
+      key: 'amountPaid',
+      label: 'Paid',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      render: (o) => fmt(o.amountPaid),
+    },
+    {
+      key: 'balance',
+      label: 'Still owed',
+      align: 'right',
+      tnum: true,
+      render: (o) => <span className="font-semibold text-bad">{fmt(o.balance)}</span>,
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      render: (o) => (
+        <button onClick={() => setPaying(o)} className="btn-primary btn-sm">
+          Pay
+        </button>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -57,19 +124,11 @@ export default function PayablesPage() {
         {data.owing.length === 0 ? (
           <EmptyState title="You owe nobody" hint="Every delivery has been paid for." />
         ) : (
-          <ul className="divide-y divide-line">
-            {data.owing.map((s) => (
-              <li key={s.supplier} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{s.name}</p>
-                  <p className="text-xs text-muted">
-                    {s.orders} unpaid order{s.orders === 1 ? '' : 's'}
-                  </p>
-                </div>
-                <span className="tnum shrink-0 font-bold text-bad">{fmt(s.owed)}</span>
-              </li>
-            ))}
-          </ul>
+          <DataTable
+            columns={supplierColumns}
+            rows={(data.owing || []).map((x) => ({ ...x, _id: x.supplier }))}
+            minWidth={520}
+          />
         )}
       </Card>
 
@@ -81,24 +140,11 @@ export default function PayablesPage() {
         {orders.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-muted">Nothing outstanding.</p>
         ) : (
-          <ul className="divide-y divide-line">
-            {orders.map((o) => (
-              <li key={o._id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{o.supplierName}</p>
-                  <p className="truncate text-xs text-muted">
-                    {o.poNumber} · received {fmt(o.total)} · paid {fmt(o.amountPaid)}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="tnum font-semibold text-bad">{fmt(o.balance)}</span>
-                  <button onClick={() => setPaying(o)} className="btn-primary btn-sm">
-                    Pay
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <DataTable
+            columns={orderColumns}
+            rows={orders}
+            minWidth={700}
+          />
         )}
       </Card>
 

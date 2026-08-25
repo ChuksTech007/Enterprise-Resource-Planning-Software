@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost, apiDelete } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
+import DataTable from '@/components/DataTable';
 import {
   Card,
   Chip,
@@ -56,6 +57,47 @@ export default function ExpensesPage() {
       toast(e.message, 'bad');
     }
   }
+
+  const expenseColumns = [
+    {
+      key: 'date',
+      label: 'Date',
+      render: (e) =>
+        new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+    },
+    {
+      key: 'description',
+      label: 'What for',
+      render: (e) => <span className="block max-w-[20rem] truncate font-medium">{e.description}</span>,
+    },
+    { key: 'category', label: 'Category', hideOn: 'sm' },
+    { key: 'recordedByName', label: 'Recorded by', hideOn: 'md' },
+    {
+      key: 'paidFromTill',
+      label: 'From till',
+      hideOn: 'sm',
+      /* Money out of the drawer has to be visible here, because it is what
+       * makes the till short at cash-up. */
+      render: (e) => (e.paidFromTill ? <Chip tone="warn">Yes</Chip> : <span className="text-faint">—</span>),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      align: 'right',
+      tnum: true,
+      render: (e) => <span className="font-semibold">{fmt(e.amount)}</span>,
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      render: (e) => (
+        <button onClick={() => remove(e)} className="btn-ghost btn-sm text-bad" title="Remove">
+          ✕
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -128,30 +170,12 @@ export default function ExpensesPage() {
                 }
               />
             ) : (
-              <ul className="divide-y divide-line">
-                {data.expenses.map((e) => (
-                  <li key={e._id} className="flex items-start justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{e.description}</p>
-                      <p className="truncate text-xs text-muted">
-                        {new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ·{' '}
-                        {e.category} · {e.recordedByName}
-                      </p>
-                      {e.paidFromTill ? (
-                        <span className="mt-1 inline-block">
-                          <Chip tone="warn">Paid from till</Chip>
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="tnum font-semibold">{fmt(e.amount)}</span>
-                      <button onClick={() => remove(e)} className="btn-ghost btn-sm text-bad">
-                        ✕
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <DataTable
+                columns={expenseColumns}
+                rows={data.expenses || []}
+                minWidth={760}
+                empty={<EmptyState title="Nothing spent in this period" />}
+              />
             )}
           </Card>
         </>

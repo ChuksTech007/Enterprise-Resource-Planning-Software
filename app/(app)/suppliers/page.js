@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost, apiPatch } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
+import DataTable from '@/components/DataTable';
 import { Card, Chip, EmptyState, ErrorNote, Field, Loading, Modal, Spinner } from '@/components/ui';
 
 /**
@@ -24,6 +25,61 @@ export default function SuppliersPage() {
 
   if (!suppliers) return <Loading />;
 
+  const columns = [
+    {
+      key: 'name',
+      label: 'Supplier',
+      render: (s) => <span className="block max-w-[14rem] truncate font-semibold">{s.name}</span>,
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (s) => s.phone || <span className="text-faint">—</span>,
+    },
+    {
+      key: 'leadTimeDays',
+      label: 'Lead time',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      /* How long they take to deliver is what decides whether "order now"
+       * is soon enough, so it sits beside what is running out. */
+      render: (s) => s.leadTimeDays + 'd',
+    },
+    {
+      key: 'lowItems',
+      label: 'Order from them',
+      /* The reason to open this screen at all: which supplier to ring
+       * today. Named items rather than a count, because the call is about
+       * particular things. */
+      render: (s) =>
+        s.lowItems?.length ? (
+          <span className="block max-w-[20rem] truncate font-medium text-bad">
+            {s.lowItems.length} low — {s.lowItems.map((m) => m.name).join(', ')}
+          </span>
+        ) : (
+          <span className="text-faint">nothing low</span>
+        ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      render: (s) => (
+        <span className="flex justify-end gap-1 whitespace-nowrap">
+          {s.phone ? (
+            <a href={`tel:${s.phone}`} className="btn-secondary btn-sm">
+              Call
+            </a>
+          ) : null}
+          <button onClick={() => setEditing(s)} className="btn-ghost btn-sm">
+            Edit
+          </button>
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -42,47 +98,11 @@ export default function SuppliersPage() {
           />
         </Card>
       ) : (
-        suppliers.map((s) => (
-          <Card key={s._id} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-semibold">{s.name}</p>
-                <p className="text-sm text-muted">
-                  {s.phone || 'No phone'} · usually {s.leadTimeDays} day{s.leadTimeDays === 1 ? '' : 's'} to deliver
-                </p>
-                {s.address ? <p className="text-xs text-faint">{s.address}</p> : null}
-              </div>
-              <div className="flex shrink-0 gap-2">
-                {s.phone ? (
-                  <a href={`tel:${s.phone}`} className="btn-secondary btn-sm">
-                    Call
-                  </a>
-                ) : null}
-                <button onClick={() => setEditing(s)} className="btn-ghost btn-sm">
-                  Edit
-                </button>
-              </div>
-            </div>
-
-            {s.lowItems?.length > 0 && (
-              <div className="mt-3 rounded-lg bg-bad-soft p-3">
-                <p className="mb-1.5 text-xs font-semibold text-bad">
-                  Order from them now — {s.lowItems.length} item(s) at or below reorder level
-                </p>
-                <ul className="space-y-1">
-                  {s.lowItems.map((m) => (
-                    <li key={m._id} className="flex justify-between text-sm text-bad">
-                      <span>{m.name}</span>
-                      <span className="tnum">
-                        {m.quantity} {m.unit} left
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Card>
-        ))
+        <DataTable
+          columns={columns}
+          rows={suppliers}
+          minWidth={820}
+        />
       )}
 
       {editing && (

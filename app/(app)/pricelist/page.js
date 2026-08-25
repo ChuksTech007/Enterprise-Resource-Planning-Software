@@ -1,208 +1,263 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiGet, apiPut } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
-import { Card, EmptyState, ErrorNote, Field, Loading, Modal, MoneyInput, Spinner } from '@/components/ui';
+import { Card, ErrorNote, Loading, SectionTitle, Spinner } from '@/components/ui';
 
 /**
- * Preset prices for standard work.
+ * The rate card.
  *
- * The point is consistency: two cashiers quoting the same job on the same day
- * should give the same number. Cashiers can read the list; only the owner can
- * change a price.
+ * A grid, because that is what it is and what the shop already keeps: sizes
+ * down the side, what each thing costs at that size across the top. Editing
+ * it one dialog at a time — which is how this screen used to work — turns
+ * filling in forty rates into an afternoon nobody ever finishes, and a
+ * half-filled price list is worse than an empty one: staff trust the figures
+ * that are there and quote the gaps from memory.
+ *
+ * An empty cell means "no rate set", and stays empty on the counter screen
+ * for somebody to type into. It is not the same as a rate of zero, which is
+ * a real price meaning the shop does that part for nothing.
  */
+
+/* One column per thing the shop charges for. Frames appear three times
+ * because the grade is what its price depends on. */
+const COLUMNS = [
+  { product: 'print', label: 'Print' },
+  { product: 'canvas', label: 'Canvas' },
+  { product: 'frame', grade: 'bold', label: 'Frame bold' },
+  { product: 'frame', grade: 'normal', label: 'Frame normal' },
+  { product: 'frame', grade: 'tiny', label: 'Frame tiny' },
+  { product: 'glass', label: 'Acrylic' },
+  { product: 'board', label: 'Board' },
+];
+
+const cellKey = (size, col) => [size, col.product, col.grade || ''].join('|');
+
 export default function PriceListPage() {
   const { fmt, isOwner, toast } = useApp();
-  const [data, setData] = useState(null);
-  const [editing, setEditing] = useState(null);
+
+  const [card, setCard] = useState(null);
+  const [values, setValues] = useState({});
+  const [original, setOriginal] = useState({});
+  const [newSize, setNewSize] = useState('');
+  const [extraSizes, setExtraSizes] = useState([]);
+  const [showCost, setShowCost] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const load = useCallback(() => {
-    apiGet('/api/pricelist').then(setData).catch(() => setData({ items: [] }));
+    apiGet('/api/ratecard')
+      .then((d) => {
+        setCard(d);
+        const v = {};
+        for (const s of d.sizes || []) {
+          for (const rows of Object.values(s.products || {})) {
+            for (const r of rows) {
+              v[cellKey(s.size, { product: r.product, grade: r.grade })] = {
+                price: String(r.price ?? ''),
+                cost: r.estimatedCost === undefined ? '' : String(r.estimatedCost),
+              };
+            }
+          }
+        }
+        setValues(v);
+        setOriginal(v);
+        setExtraSizes([]);
+      })
+      .catch((e) => setError(e.message));
   }, []);
 
   useEffect(load, [load]);
 
-  if (!data) return <Loading />;
+  const sizes = useMemo(() => {
+    const known = (card?.sizes || []).map((s) => s.size);
+    return [...known, ...extraSizes.filter((s) => !known.includes(s))];
+  }, [card, extraSizes]);
 
-  const grouped = data.items.reduce((acc, i) => {
-    (acc[i.jobType] ||= []).push(i);
-    return acc;
-  }, {});
+  const dirty = useMemo(
+    () =>
+      Object.keys({ ...values, ...original }).filter((k) => {
+        const a = values[k] || {};
+        const b = original[k] || {};
+        return (a.price ?? '') !== (b.price ?? '') || (a.cost ?? '') !== (b.cost ?? '');
+      }),
+    [values, original]
+  );
 
-  async function remove(item) {
-    if (!confirm(`Remove "${item.name}" from the price list?`)) return;
-    await apiDelete(`/api/pricelist/${item._id}`);
-    toast('Removed');
-    load();
+  function set(size, col, field, value) {
+    const k = cellKey(size, col);
+    setValues((v) => ({ ...v, [k]: { ...(v[k] || { price: '', cost: '' }), [field]: value } }));
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Price list</h1>
-        {isOwner && (
-          <button onClick={() => setEditing({})} className="btn-primary btn-sm">
-            Add price
-          </button>
-        )}
-      </div>
-
-      <p className="text-sm text-muted">
-        These appear as tap-to-add buttons on the sale and job screens, so quotes stay consistent.
-      </p>
-
-      {data.items.length === 0 ? (
-        <Card>
-          <EmptyState
-            title="No prices set yet"
-            hint={
-              isOwner
-                ? 'Add your standard jobs — 100 complimentary cards, a 3x2ft banner — so staff quote the same price every time.'
-                : 'The owner has not set up the price list yet.'
-            }
-            action={isOwner ? <button onClick={() => setEditing({})} className="btn-primary btn-sm">Add price</button> : null}
-          />
-        </Card>
-      ) : (
-        Object.entries(grouped).map(([type, items]) => (
-          <Card key={type}>
-            <div className="border-b border-line px-4 py-2.5">
-              <h2 className="text-sm font-semibold">{type}</h2>
-            </div>
-            <ul className="divide-y divide-line">
-              {items.map((i) => (
-                <li key={i._id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{i.name}</p>
-                    <p className="truncate text-xs text-muted">
-                      {i.unitLabel}
-                      {i.minQuantity > 1 ? ` · minimum ${i.minQuantity}` : ''}
-                      {isOwner && i.estimatedCost > 0 ? ` · costs about ${fmt(i.estimatedCost)}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="tnum font-bold">{fmt(i.price)}</span>
-                    {isOwner && (
-                      <>
-                        <button onClick={() => setEditing(i)} className="btn-ghost btn-sm">
-                          Edit
-                        </button>
-                        <button onClick={() => remove(i)} className="btn-ghost btn-sm text-bad">
-                          ✕
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        ))
-      )}
-
-      {editing && (
-        <PriceModal
-          item={editing}
-          jobTypes={data.jobTypes}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null);
-            toast('Price saved');
-            load();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function PriceModal({ item, jobTypes, onClose, onSaved }) {
-  const [form, setForm] = useState({ unitLabel: 'per unit', jobType: 'Other', minQuantity: 1, ...item });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+  function addSize() {
+    const s = newSize.trim();
+    if (!s) return;
+    if (sizes.includes(s)) {
+      setError(`"${s}" is already on the card.`);
+      return;
+    }
+    setExtraSizes((x) => [...x, s]);
+    setNewSize('');
+    setError('');
+  }
 
   async function save() {
-    setBusy(true);
+    setSaving(true);
     setError('');
     try {
-      const payload = {
-        name: form.name,
-        jobType: form.jobType,
-        unitLabel: form.unitLabel,
-        price: Number(form.price) || 0,
-        estimatedCost: Number(form.estimatedCost) || 0,
-        minQuantity: Number(form.minQuantity) || 1,
-      };
-      if (item._id) await apiPatch(`/api/pricelist/${item._id}`, payload);
-      else await apiPost('/api/pricelist', payload, { queue: false });
-      onSaved();
+      const cells = dirty.map((k) => {
+        const [size, product, grade] = k.split('|');
+        const v = values[k] || {};
+        return {
+          size,
+          product,
+          grade: grade || null,
+          price: v.price ?? '',
+          cost: v.cost ?? '',
+        };
+      });
+
+      const res = await apiPut('/api/ratecard/save', { cells }, { queue: false });
+      toast(
+        `Saved — ${res.added} added, ${res.changed} changed` +
+          (res.removed ? `, ${res.removed} removed` : '')
+      );
+      load();
     } catch (e) {
       setError(e.message);
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
+  if (error && !card) return <Card className="p-6 text-center text-bad">{error}</Card>;
+  if (!card) return <Loading />;
+
+  const field = showCost ? 'cost' : 'price';
+
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={item._id ? 'Edit price' : 'Add a price'}
-      footer={
-        <button onClick={save} disabled={busy} className="btn-primary w-full">
-          {busy ? <Spinner /> : null}
-          Save
-        </button>
-      }
-    >
-      <div className="space-y-3">
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Field label="Name" hint="What staff will see on the button">
-          <input
-            className="field"
-            value={form.name || ''}
-            onChange={(e) => set({ name: e.target.value })}
-            placeholder="e.g. 100 complimentary cards"
-            autoFocus
-          />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Job type">
-            <select className="field" value={form.jobType} onChange={(e) => set({ jobType: e.target.value })}>
-              {jobTypes?.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Priced">
-            <input
-              className="field"
-              value={form.unitLabel || ''}
-              onChange={(e) => set({ unitLabel: e.target.value })}
-              placeholder="per 100, per sqm…"
-            />
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Price">
-            <MoneyInput value={form.price ?? ''} onChange={(price) => set({ price })} />
-          </Field>
-          <Field label="Your cost" hint="Only you see this. Feeds the profit estimate.">
-            <MoneyInput value={form.estimatedCost ?? ''} onChange={(estimatedCost) => set({ estimatedCost })} />
-          </Field>
-        </div>
-        <Field label="Default quantity" hint="How many get added when a cashier taps this">
-          <input
-            className="field tnum"
-            inputMode="numeric"
-            value={form.minQuantity ?? 1}
-            onChange={(e) => set({ minQuantity: e.target.value.replace(/\D/g, '') })}
-          />
-        </Field>
+    <div className="space-y-4">
+      <div className="no-print flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-bold">Price list</h1>
+
+        {isOwner ? (
+          <div className="flex items-center gap-2">
+            {/* One grid, two figures. Showing both at once doubles the width
+                of every column and pushes the card off the screen. */}
+            <button
+              onClick={() => setShowCost((s) => !s)}
+              className={showCost ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'}
+            >
+              {showCost ? 'Editing cost' : 'Editing selling price'}
+            </button>
+            <button onClick={save} disabled={!dirty.length || saving} className="btn-primary btn-sm">
+              {saving ? <Spinner /> : null}
+              {dirty.length ? `Save ${dirty.length} change${dirty.length === 1 ? '' : 's'}` : 'Saved'}
+            </button>
+          </div>
+        ) : null}
       </div>
-    </Modal>
+
+      <p className="text-sm text-muted">
+        {showCost
+          ? 'What each thing costs the shop to buy. Only you see these; they are what the profit figures are worked out from.'
+          : 'What the customer is charged. Leave a box empty if the shop does not sell that at that size.'}
+      </p>
+
+      {error ? <ErrorNote>{error}</ErrorNote> : null}
+
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-line bg-surface">
+                <th className="sticky left-0 z-10 bg-surface px-3 py-2 text-left text-xs font-semibold text-muted">
+                  Size
+                </th>
+                {COLUMNS.map((c) => (
+                  <th
+                    key={c.label}
+                    className="px-2 py-2 text-right text-xs font-semibold text-muted"
+                  >
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {sizes.length === 0 ? (
+                <tr>
+                  <td colSpan={COLUMNS.length + 1} className="px-3 py-8 text-center text-sm text-muted">
+                    No sizes yet. Add the ones the shop sells below.
+                  </td>
+                </tr>
+              ) : (
+                sizes.map((size) => (
+                  <tr key={size} className="border-b border-line">
+                    <td className="sticky left-0 z-10 bg-card px-3 py-2 font-semibold">{size}</td>
+                    {COLUMNS.map((c) => {
+                      const k = cellKey(size, c);
+                      const v = values[k]?.[field] ?? '';
+                      const isDirty = dirty.includes(k);
+                      return (
+                        <td key={c.label} className="px-1 py-1">
+                          <input
+                            value={v}
+                            onChange={(e) => set(size, c, field, e.target.value)}
+                            disabled={!isOwner}
+                            inputMode="decimal"
+                            placeholder="—"
+                            className={
+                              'tnum w-full rounded border px-2 py-1.5 text-right disabled:opacity-60 ' +
+                              (isDirty ? 'border-brand bg-brand-soft' : 'border-line bg-card')
+                            }
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {isOwner ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-3">
+            <input
+              value={newSize}
+              onChange={(e) => setNewSize(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addSize()}
+              placeholder="Add a size — 12/15"
+              className="w-48 rounded-lg border border-line bg-card px-3 py-2 text-sm"
+            />
+            <button onClick={addSize} className="btn-secondary btn-sm">
+              Add size
+            </button>
+            <p className="ml-auto text-xs text-faint">
+              A new size appears as an empty row. Type its prices, then save.
+            </p>
+          </div>
+        ) : null}
+      </Card>
+
+      {/* Rates that hold whatever the size — a delivery, a mount cut. Kept
+          out of the grid because they have no size to sit against. */}
+      {card.anySize?.length ? (
+        <Card className="p-4">
+          <SectionTitle>Charged the same at any size</SectionTitle>
+          <ul className="divide-y divide-line">
+            {card.anySize.map((r) => (
+              <li key={r._id} className="flex justify-between py-2 text-sm">
+                <span>{r.name}</span>
+                <span className="tnum">{fmt(r.price)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+    </div>
   );
 }

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { apiGet, apiPost } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
 import ShareModal from '@/components/ShareModal';
-import { Card, Chip, EmptyState, Loading, StatTile } from '@/components/ui';
+import DataTable from '@/components/DataTable';
+import { Chip, EmptyState, Loading, StatTile } from '@/components/ui';
 
 /**
  * Who owes money, worst first.
@@ -38,6 +39,84 @@ export default function DebtsPage() {
 
   const oldest = data.invoices.filter((i) => i.ageDays >= 14);
 
+  const columns = [
+    {
+      key: 'customerName',
+      label: 'Customer',
+      render: (s) => (
+        <span className="block max-w-[14rem] truncate font-medium">{s.customerName}</span>
+      ),
+    },
+    {
+      key: 'invoiceNumber',
+      label: 'Invoice',
+      hideOn: 'sm',
+      render: (s) => (
+        <span className="whitespace-nowrap">
+          {s.invoiceNumber}
+          {s.jobNumber ? <span className="ml-1 text-xs text-faint">{s.jobNumber}</span> : null}
+        </span>
+      ),
+    },
+    {
+      key: 'paid',
+      label: 'Paid',
+      align: 'right',
+      tnum: true,
+      hideOn: 'md',
+      render: (s) => (
+        <span className="text-muted">
+          {fmt(s.amountPaid)} of {fmt(s.total)}
+        </span>
+      ),
+    },
+    {
+      key: 'balance',
+      label: 'Owing',
+      align: 'right',
+      tnum: true,
+      render: (s) => <span className="font-bold text-bad">{fmt(s.balance)}</span>,
+    },
+    {
+      key: 'ageDays',
+      label: 'Age',
+      align: 'right',
+      /* How old a debt is decides what the shop does about it, so it is a
+       * column to sort an eye down rather than a note under the amount. */
+      render: (s) => (
+        <span className="whitespace-nowrap">
+          <span className={s.ageDays >= 30 ? 'font-semibold text-bad' : ''}>{s.ageDays}d</span>
+          {s.overdue ? <Chip tone="bad">Past due</Chip> : null}
+        </span>
+      ),
+    },
+    {
+      key: 'reminderCount',
+      label: 'Reminded',
+      align: 'right',
+      hideOn: 'md',
+      render: (s) =>
+        s.reminderCount > 0 ? s.reminderCount + '×' : <span className="text-faint">—</span>,
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      /* The row is not a link here, because there are two different things a
+       * person wants to do with a debt and neither is "look at it". */
+      render: (s) => (
+        <span className="flex justify-end gap-1 whitespace-nowrap">
+          <button onClick={() => remind(s)} className="btn-secondary btn-sm">
+            Remind
+          </button>
+          <Link href={`/sales/${s._id}`} className="btn-primary btn-sm">
+            Collect
+          </Link>
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Who owes me</h1>
@@ -57,53 +136,13 @@ export default function DebtsPage() {
         />
       </div>
 
-      <Card>
-        {data.invoices.length === 0 ? (
-          <EmptyState title="Nobody owes you anything" hint="Every invoice has been settled in full. Rare and excellent." />
-        ) : (
-          <ul className="divide-y divide-line">
-            {data.invoices.map((s) => (
-              <li key={s._id} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{s.customerName}</p>
-                    <p className="truncate text-xs text-muted">
-                      {s.invoiceNumber}
-                      {s.jobNumber ? ` · ${s.jobNumber}` : ''} · {fmt(s.amountPaid)} of {fmt(s.total)} paid
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="tnum font-bold text-bad">{fmt(s.balance)}</p>
-                    <p className="text-xs text-faint">{s.ageDays} day{s.ageDays === 1 ? '' : 's'} old</p>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  {s.ageDays >= 30 ? (
-                    <Chip tone="bad">Over a month</Chip>
-                  ) : s.ageDays >= 14 ? (
-                    <Chip tone="warn">Over two weeks</Chip>
-                  ) : null}
-                  {s.overdue ? <Chip tone="bad">Past due date</Chip> : null}
-                  {s.reminderCount > 0 ? (
-                    <Chip tone="neutral">
-                      Reminded {s.reminderCount}×
-                    </Chip>
-                  ) : null}
-
-                  <div className="flex-1" />
-                  <button onClick={() => remind(s)} className="btn-secondary btn-sm">
-                    Remind
-                  </button>
-                  <Link href={`/sales/${s._id}`} className="btn-primary btn-sm">
-                    Collect
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <DataTable
+        columns={columns}
+        rows={data?.invoices || []}
+        loading={!data}
+        minWidth={880}
+        empty={<EmptyState title="Nobody owes you anything" hint="Every invoice is settled." />}
+      />
 
       <ShareModal share={reminder} title="Send a reminder" onClose={() => setReminder(null)} />
     </div>

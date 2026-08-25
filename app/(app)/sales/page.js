@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
-import { Card, EmptyState, Loading, PAY_STATUS_META, Segmented, StatTile, StatusChip } from '@/components/ui';
+import DataTable from '@/components/DataTable';
+import { EmptyState, Loading, PAY_STATUS_META, Segmented, StatTile, StatusChip } from '@/components/ui';
 
 const PERIODS = [
   { value: 'today', label: 'Today' },
@@ -28,6 +29,58 @@ export default function SalesPage() {
       .then(setData)
       .catch(() => setData({ sales: [], totals: {} }));
   }, [period, status, q]);
+
+  const columns = [
+    {
+      key: 'invoiceNumber',
+      label: 'Invoice',
+      render: (s) => (
+        <span className="whitespace-nowrap font-medium">
+          {s.invoiceNumber}
+          {s.jobNumber ? <span className="ml-1 text-xs text-faint">{s.jobNumber}</span> : null}
+        </span>
+      ),
+    },
+    {
+      key: 'customerName',
+      label: 'Customer',
+      render: (s) => <span className="block max-w-[16rem] truncate">{s.customerName}</span>,
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      hideOn: 'sm',
+      render: (s) =>
+        new Date(s.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+    },
+    { key: 'createdByName', label: 'Served by', hideOn: 'md' },
+    {
+      key: 'total',
+      label: 'Total',
+      align: 'right',
+      tnum: true,
+      render: (s) => <span className="font-semibold">{fmt(s.total)}</span>,
+    },
+    {
+      /* Kept in its own column so a glance down it shows every naira still
+       * to be collected, without reading a single invoice. */
+      key: 'balance',
+      label: 'Owing',
+      align: 'right',
+      tnum: true,
+      render: (s) =>
+        s.balance > 0 ? (
+          <span className="font-semibold text-bad">{fmt(s.balance)}</span>
+        ) : (
+          <span className="text-faint">—</span>
+        ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (s) => <StatusChip status={s.status} map={PAY_STATUS_META} />,
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -61,38 +114,14 @@ export default function SalesPage() {
         </select>
       </div>
 
-      <Card>
-        {!data ? (
-          <Loading />
-        ) : data.sales.length === 0 ? (
-          <EmptyState title="No sales here" hint="Try a different period, or record a new sale." />
-        ) : (
-          <ul className="divide-y divide-line">
-            {data.sales.map((s) => (
-              <li key={s._id}>
-                <Link href={`/sales/${s._id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-page">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{s.customerName}</p>
-                    <p className="truncate text-xs text-muted">
-                      {s.invoiceNumber}
-                      {s.jobNumber ? ` · ${s.jobNumber}` : ''} ·{' '}
-                      {new Date(s.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ·{' '}
-                      {s.createdByName}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="tnum font-semibold">{fmt(s.total)}</p>
-                    <div className="mt-0.5 flex items-center justify-end gap-1">
-                      {s.balance > 0 ? <span className="tnum text-xs text-bad">{fmt(s.balance)} owing</span> : null}
-                      <StatusChip status={s.status} map={PAY_STATUS_META} />
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <DataTable
+        columns={columns}
+        rows={data?.sales || []}
+        loading={!data}
+        hrefFor={(s) => `/sales/${s._id}`}
+        minWidth={820}
+        empty={<EmptyState title="No invoices here" hint="Invoices appear as work is sold." />}
+      />
     </div>
   );
 }

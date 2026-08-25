@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
+import DataTable from '@/components/DataTable';
 import {
   Card,
   Chip,
@@ -58,6 +59,65 @@ export default function PurchasesPage() {
 
   useEffect(load, [load]);
 
+  const orderColumns = [
+    { key: 'poNumber', label: 'Order', render: (o) => <span className="whitespace-nowrap">{o.poNumber}</span> },
+    {
+      key: 'supplierName',
+      label: 'Supplier',
+      render: (o) => <span className="block max-w-[14rem] truncate font-medium">{o.supplierName}</span>,
+    },
+    {
+      key: 'createdAt',
+      label: 'Raised',
+      hideOn: 'sm',
+      render: (o) => new Date(o.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+    },
+    {
+      key: 'items',
+      label: 'Items',
+      align: 'right',
+      tnum: true,
+      hideOn: 'md',
+      render: (o) => o.items.length,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (o) => {
+        const meta = STATUS_META[o.status] || { label: o.status, tone: 'neutral' };
+        return (
+          <span className="flex items-center gap-1.5 whitespace-nowrap">
+            <Chip tone={meta.tone}>{meta.label}</Chip>
+            {o.expectedDate && o.status !== 'received' ? (
+              <span className="text-xs text-faint">
+                due {new Date(o.expectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'total',
+      label: 'Total',
+      align: 'right',
+      tnum: true,
+      render: (o) => <span className="font-semibold">{fmt(o.total || o.subtotal)}</span>,
+    },
+    {
+      key: 'balance',
+      label: 'Unpaid',
+      align: 'right',
+      tnum: true,
+      render: (o) =>
+        o.balance > 0 ? (
+          <span className="font-semibold text-bad">{fmt(o.balance)}</span>
+        ) : (
+          <span className="text-faint">—</span>
+        ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -92,38 +152,12 @@ export default function PurchasesPage() {
             }
           />
         ) : (
-          <ul className="divide-y divide-line">
-            {data.orders.map((o) => {
-              const meta = STATUS_META[o.status] || { label: o.status, tone: 'neutral' };
-              return (
-                <li key={o._id}>
-                  <button onClick={() => setOpenOrder(o)} className="block w-full px-4 py-3 text-left hover:bg-page">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{o.supplierName}</p>
-                        <p className="truncate text-xs text-muted">
-                          {o.poNumber} · {o.items.length} item(s) ·{' '}
-                          {new Date(o.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="tnum font-semibold">{fmt(o.total || o.subtotal)}</p>
-                        {o.balance > 0 ? <p className="tnum text-xs text-bad">{fmt(o.balance)} unpaid</p> : null}
-                      </div>
-                    </div>
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <Chip tone={meta.tone}>{meta.label}</Chip>
-                      {o.expectedDate && o.status !== 'received' ? (
-                        <span className="text-xs text-faint">
-                          due {new Date(o.expectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                        </span>
-                      ) : null}
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <DataTable
+            columns={orderColumns}
+            rows={data.orders || []}
+            minWidth={860}
+            empty={<EmptyState title="No orders yet" />}
+          />
         )}
       </Card>
 

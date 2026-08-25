@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { apiGet, apiPost } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
 import MovementModal from '@/components/MovementModal';
+import DataTable from '@/components/DataTable';
 import {
   Card,
   Chip,
@@ -51,6 +52,83 @@ function Inventory() {
   const totalValue = isOwner
     ? data.materials.reduce((s, m) => s + (m.quantity || 0) * (m.unitCost || 0), 0)
     : null;
+
+  const stockColumns = [
+    {
+      key: 'name',
+      label: 'Item',
+      render: (m) => (
+        <Link href={`/inventory/${m._id}`} className="font-medium hover:text-brand">
+          <span className="block max-w-[16rem] truncate">{m.name}</span>
+        </Link>
+      ),
+    },
+    { key: 'category', label: 'Category', hideOn: 'sm' },
+    {
+      key: 'spec',
+      label: 'Spec',
+      hideOn: 'md',
+      render: (m) => (
+        <span className="block max-w-[14rem] truncate text-muted">
+          {[m.size, m.colour, m.finish].filter(Boolean).join(' · ') || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'quantity',
+      label: 'In stock',
+      align: 'right',
+      tnum: true,
+      /* The number the shop is actually looking for, next to the level it
+       * must not fall below — the comparison is the whole reason to open
+       * this screen. */
+      render: (m) => (
+        <span className={'font-bold ' + (m._low ? 'text-bad' : '')}>
+          {m.quantity} <span className="text-xs font-normal text-muted">{m.unit}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'reorderLevel',
+      label: 'Reorder at',
+      align: 'right',
+      tnum: true,
+      hideOn: 'sm',
+      render: (m) =>
+        m.reorderLevel > 0 ? (
+          <span className="text-muted">{m.reorderLevel}</span>
+        ) : (
+          <span className="text-faint">—</span>
+        ),
+    },
+    {
+      key: 'shelfLocation',
+      label: 'Shelf',
+      hideOn: 'md',
+      render: (m) => m.shelfLocation || <span className="text-faint">—</span>,
+    },
+    {
+      key: 'unitCost',
+      label: 'Cost',
+      align: 'right',
+      tnum: true,
+      hideOn: 'md',
+      render: (m) => (isOwner ? fmt(m.unitCost) : <span className="text-faint">—</span>),
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      render: (m) => (
+        <span className="flex items-center justify-end gap-1 whitespace-nowrap">
+          {m._low ? <Chip tone="bad">Reorder</Chip> : null}
+          <button onClick={() => setMoveFor(m)} className="btn-secondary btn-sm">
+            Movement
+          </button>
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -110,45 +188,16 @@ function Inventory() {
             action={isOwner ? <button onClick={() => setAddOpen(true)} className="btn-primary btn-sm">Add item</button> : null}
           />
         ) : (
-          <ul className="divide-y divide-line">
-            {data.materials.map((m) => {
-              const low = m.reorderLevel > 0 && m.quantity <= m.reorderLevel;
-              return (
-                <li key={m._id} className="px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link href={`/inventory/${m._id}`} className="truncate font-medium hover:text-brand">
-                        {m.name}
-                      </Link>
-                      <p className="truncate text-xs text-muted">
-                        {[m.category, m.size, m.gsm && `${m.gsm}gsm`, m.colour, m.finish].filter(Boolean).join(' · ')}
-                      </p>
-                      <p className="truncate text-xs text-faint">
-                        {m.shelfLocation ? `Shelf ${m.shelfLocation}` : 'No shelf set'}
-                        {m.supplier?.name ? ` · ${m.supplier.name} (${m.supplier.leadTimeDays}d lead)` : ''}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className={`tnum font-bold ${low ? 'text-bad' : ''}`}>
-                        {m.quantity} <span className="text-xs font-normal text-muted">{m.unit}</span>
-                      </p>
-                      {m.reorderLevel > 0 ? (
-                        <p className="text-xs text-faint">reorder at {m.reorderLevel}</p>
-                      ) : null}
-                      {isOwner ? <p className="tnum text-xs text-faint">{fmt(m.unitCost)} each</p> : null}
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    {low ? <Chip tone="bad">Reorder now</Chip> : null}
-                    <div className="flex-1" />
-                    <button onClick={() => setMoveFor(m)} className="btn-secondary btn-sm">
-                      Record movement
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <DataTable
+            columns={stockColumns}
+            rows={(data.materials || []).map((m) => ({
+              ...m,
+              _low: m.reorderLevel > 0 && m.quantity <= m.reorderLevel,
+              _tone: m.reorderLevel > 0 && m.quantity <= m.reorderLevel ? 'bad' : undefined,
+            }))}
+            minWidth={880}
+            empty={<EmptyState title="No stock here" />}
+          />
         )}
       </Card>
 
