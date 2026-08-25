@@ -127,13 +127,14 @@ what is still owing. Overdue jobs are tinted red.
 Move a job along as the work happens, and mark it **ready** when the customer
 can collect.
 
-### If the internet drops
+### If the connection drops for a moment
 
-Keep working. A sale recorded with no connection is **saved on that device**
-and sent as soon as the signal returns. A bar across the top says how many
-are still waiting, so "I entered it" and "it is saved" never drift apart.
+The system runs online, so it needs internet.
 
-Nothing is lost, and nothing is recorded twice.
+If the signal goes while somebody is part-way through a sale, that sale is
+held on the device and sent when the connection comes back — a bar across
+the top says how many are waiting. It is a safety net for a bad minute, not
+a way of working: leave the browser open until the bar clears.
 
 ---
 
